@@ -2,14 +2,18 @@ import { Module } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { DepartmentsController } from './departments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DepartmentsRepository } from 'src/entities/departments.entity';
-import { FacultiesRepository } from 'src/entities/faculties.entity';
+import { Department } from 'src/entities/department.entity';
+import { Faculty } from 'src/entities/faculty.entity';
+import { AuthService } from '../auth/auth.service';
+import { Admin } from 'src/entities/admin.entity';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DepartmentsRepository, FacultiesRepository])
+    JwtModule,
+    TypeOrmModule.forFeature([Department, Faculty, Admin])
   ],
   controllers: [DepartmentsController],
-  providers: [DepartmentsService]
+  providers: [DepartmentsService, AuthService]
 })
 export class DepartmentsModule {}

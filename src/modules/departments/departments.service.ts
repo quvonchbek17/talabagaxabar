@@ -7,18 +7,18 @@ import {
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DepartmentsRepository } from 'src/entities/departments.entity';
+import { Department } from 'src/entities/department.entity';
 import { Repository } from 'typeorm';
-import { FacultiesRepository } from 'src/entities/faculties.entity';
+import { Faculty } from 'src/entities/faculty.entity';
 
 @Injectable()
 export class DepartmentsService {
   constructor(
-    @InjectRepository(DepartmentsRepository)
-    private readonly departmentRepo: Repository<DepartmentsRepository>,
+    @InjectRepository(Department)
+    private readonly departmentRepo: Repository<Department>,
 
-    @InjectRepository(FacultiesRepository)
-    private readonly facultyRepo: Repository<FacultiesRepository>,
+    @InjectRepository(Faculty)
+    private readonly facultyRepo: Repository<Faculty>,
   ) {}
   async create(body: CreateDepartmentDto) {
     try {
@@ -36,7 +36,9 @@ export class DepartmentsService {
   }
 
   async findAll() {
-    return await this.departmentRepo.find();
+    return {
+      departments: await this.departmentRepo.find()
+    };
   }
 
   async findOne(id: string) {
@@ -55,7 +57,7 @@ export class DepartmentsService {
         return new NotFoundException("Bunday idlik fakultet yo'q")
       }
 
-      let department = this.departmentRepo.findOne({ where: { id } });
+      let department = await this.departmentRepo.findOne({ where: { id } });
       if (department) {
         await this.departmentRepo.update(id, {name: body.name, faculty});
         return {
@@ -63,7 +65,7 @@ export class DepartmentsService {
           data: await this.departmentRepo.findOne({ where: { id }}),
         };
       } else {
-        return new NotFoundException("Bunday idlik kafedra yo'q");
+        return new NotFoundException("Bunday kafedra yo'q");
       }
     } catch (error) {
       return new InternalServerErrorException(error);

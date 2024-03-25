@@ -3,11 +3,11 @@ import { FacultiesService } from './faculties.service';
 import { FacultiesController } from './faculties.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { FacultiesRepository } from 'src/entities/faculties.entity';
-import { UniversitiesRepository } from 'src/entities/universities.entity';
+import { Faculty } from 'src/entities/faculty.entity';
+import { University } from 'src/entities/university.entity';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([FacultiesRepository, UniversitiesRepository])],
+  imports:[TypeOrmModule.forFeature([Faculty, University])],
   controllers: [FacultiesController],
   providers: [FacultiesService]
 })

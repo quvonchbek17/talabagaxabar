@@ -1,10 +1,10 @@
 import { Entity, Column, OneToMany, JoinColumn, ManyToOne } from 'typeorm'
 import { BaseModel } from './model.entity';
-import { GroupsRepository } from './groups.entity';
-import { FacultiesRepository } from './faculties.entity';
+import { Group } from './group.entity';
+import { Faculty } from './faculty.entity';
 
 @Entity("botadmins")
-export class BotAdminRepository extends BaseModel {
+export class BotAdmin extends BaseModel {
 
     @Column({
         name: 'fullname',
@@ -36,7 +36,7 @@ export class BotAdminRepository extends BaseModel {
     })
     chat_id: string;
 
-    @ManyToOne(type => FacultiesRepository, faculty => faculty.botadmins)
+    @ManyToOne(type => Faculty, faculty => faculty.botadmins)
     @JoinColumn({name: "faculty_id"})
-    faculty: FacultiesRepository;
+    faculty: Faculty;
 }

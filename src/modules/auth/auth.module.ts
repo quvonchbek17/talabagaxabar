@@ -3,21 +3,17 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AdminsRepository } from 'src/entities/admins.entity';
+import { Admin } from 'src/entities/admin.entity';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
-
-
 
 @Module({
   imports: [
     PassportModule,
-    TypeOrmModule.forFeature([ AdminsRepository ]),
+    TypeOrmModule.forFeature([ Admin ]),
     JwtModule.register({
         secret: process.env.SECRET_KEY
     })],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy]
+  providers: [AuthService]
 })
 export class AuthModule {}

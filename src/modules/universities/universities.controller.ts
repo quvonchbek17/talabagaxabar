@@ -1,48 +1,47 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { UniversitiesService } from './universities.service';
 import { CreateUniversityDto } from './dto/create.dto';
-import { UpdateUniversityDto } from './dto/update.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UniversityParamsIdDto, UpdateUniversityDto } from './dto/update.dto';
+import { SetRoles } from 'src/common/decorators/set-roles.decorator';
+import { rolesName } from 'src/common/consts/roles';
+import { HasRole } from '../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt.auth.guard';
 
 @Controller('universities')
-@ApiTags("Universities")
 export class UniversitiesController {
   constructor(private readonly universitiesService: UniversitiesService) {}
 
+  @SetRoles(rolesName.super_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
   @Post("create")
-  @ApiOperation({
-    summary: "Universitet qo'shish"
-  })
   async create(@Body() body: CreateUniversityDto) {
-    return await this.universitiesService.create(body);
+    return {
+      success: true,
+      data: await this.universitiesService.create(body)
+    };
   }
 
   @Get()
-  @ApiOperation({
-    summary: "Universitetlarni olish"
-  })
   findAll() {
     return this.universitiesService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: "Universitetni idsi bo'yicha olish"
-  })
-  findOne(@Param('id') id: string) {
-    return this.universitiesService.findOne(+id);
+  findOne(@Param() params: UniversityParamsIdDto) {
+    return this.universitiesService.findOne(params.id);
   }
 
+  @SetRoles(rolesName.super_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
   @Patch(':id')
-  @ApiOperation({
-    summary: "Universitetni update qilish"
-  })
-  update(@Param('id') id: string, @Body() updateUniversityDto: UpdateUniversityDto) {
-    return this.universitiesService.update(+id, updateUniversityDto);
+  update(@Param() params: UniversityParamsIdDto, @Body() updateUniversityDto: UpdateUniversityDto) {
+    return this.universitiesService.update(params.id, updateUniversityDto);
   }
 
+  @SetRoles(rolesName.super_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.universitiesService.remove(+id);
+  remove(@Param() params: UniversityParamsIdDto) {
+    return this.universitiesService.remove(params.id);
   }
 }

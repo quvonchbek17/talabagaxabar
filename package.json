@@ -42,7 +42,9 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "rxjs": "^7.2.0",
-    "typeorm": "^0.3.17"
+    "sharp": "^0.33.3",
+    "typeorm": "^0.3.17",
+    "webpack": "^5.89.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",
@@ -50,9 +52,11 @@
     "@nestjs/testing": "^9.0.0",
     "@types/express": "^4.17.13",
     "@types/jest": "29.2.4",
+    "@types/multer": "^1.4.11",
     "@types/node": "18.11.18",
     "@types/passport-jwt": "^3.0.9",
     "@types/passport-local": "^1.0.35",
+    "@types/sharp": "^0.32.0",
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",

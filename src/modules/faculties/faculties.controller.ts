@@ -2,10 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { FacultiesService } from './faculties.service';
 import { CreateFacultyDto } from './dto/create-faculty.dto';
 import { FacultyParamsIDDto, UpdateFacultyDto } from './dto/update-faculty.dto';
-import { ApiTags } from '@nestjs/swagger';
 
 @Controller('faculties')
-@ApiTags("Faculties")
 export class FacultiesController {
   constructor(private readonly facultiesService: FacultiesService) {}
 

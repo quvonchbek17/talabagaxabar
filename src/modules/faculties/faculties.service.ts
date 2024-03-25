@@ -1,18 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateFacultyDto } from './dto/create-faculty.dto';
 import { UpdateFacultyDto } from './dto/update-faculty.dto';
-import { FacultiesRepository } from 'src/entities/faculties.entity';
+import { Faculty } from 'src/entities/faculty.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UniversitiesRepository } from 'src/entities/universities.entity';
+import { University } from 'src/entities/university.entity';
 
 @Injectable()
 export class FacultiesService {
   constructor(
-    @InjectRepository(FacultiesRepository)
-    private readonly facultyRepo: Repository<FacultiesRepository>,
-    @InjectRepository(UniversitiesRepository)
-    private readonly universityRepo: Repository<UniversitiesRepository>,
+    @InjectRepository(Faculty)
+    private readonly facultyRepo: Repository<Faculty>,
+    @InjectRepository(University)
+    private readonly universityRepo: Repository<University>,
   ){}
   async create(body: CreateFacultyDto) {
     try {
