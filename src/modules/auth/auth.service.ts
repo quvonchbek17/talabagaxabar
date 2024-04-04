@@ -47,7 +47,7 @@ export class AuthService {
             throw new HttpException("admin topilmadi", HttpStatus.NOT_FOUND)
         }
       } catch (error) {
-          throw new HttpException(error.message, error.status)
+          throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
       }
     }
 
@@ -58,7 +58,7 @@ export class AuthService {
             secret: process.env.SECRET_KEY
         })
        } catch (error) {
-          throw new HttpException(error.message, error.status)
+          throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
        }
     }
 
