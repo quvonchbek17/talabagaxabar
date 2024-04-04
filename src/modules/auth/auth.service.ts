@@ -27,10 +27,11 @@ export class AuthService {
                 password: body.password
             }
         })
-        let permissions =  (await Permission.find()).map(el => el.path)
-        let adminRole = admin.role.name
-        delete admin.role
+
         if(admin) {
+          let permissions =  (await Permission.find()).map(el => el.path)
+          let adminRole = admin.role.name
+          delete admin.role
            const token = this.sign(admin.id)
             return {
                 success: true,
