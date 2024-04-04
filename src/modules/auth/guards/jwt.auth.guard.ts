@@ -1,6 +1,8 @@
 import {
     CanActivate,
     ExecutionContext,
+    HttpException,
+    HttpStatus,
     Injectable,
     InternalServerErrorException,
     UnauthorizedException,
@@ -16,16 +18,15 @@ import { AuthService } from '../auth.service';
       const request = context.switchToHttp().getRequest();
       const token = this.extractTokenFromHeader(request);
 
-
       if (!token) {
-        throw new UnauthorizedException();
+        throw new HttpException("Token mavjud emas", HttpStatus.UNAUTHORIZED);
       }
       try {
         const userId = await this.authService.verify(token)
         let user = await this.authService.validateUser(userId)
         request['user'] = {id: userId, role: user?.role?.name};
       } catch (error){
-        throw new InternalServerErrorException(error.message);
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
       }
       return true;
     }

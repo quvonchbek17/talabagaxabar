@@ -15,10 +15,7 @@ export class UniversitiesController {
   @UseGuards(JwtAuthGuard, HasRole)
   @Post("create")
   async create(@Body() body: CreateUniversityDto) {
-    return {
-      success: true,
-      data: await this.universitiesService.create(body)
-    };
+    return this.universitiesService.create(body)
   }
 
   @Get()

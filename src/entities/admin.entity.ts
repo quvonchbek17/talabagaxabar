@@ -1,8 +1,5 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
-import { BaseModel } from './model.entity';
-import { Faculty } from './faculty.entity';
-import { University } from './university.entity';
-import { AdminRole } from './adminrole.entity';
+import { Entity, Column, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm'
+import { BaseModel, Faculty, University, AdminRole, Permission } from '@entities';
 
 @Entity("systemadmins")
 export class Admin extends BaseModel {
@@ -20,9 +17,20 @@ export class Admin extends BaseModel {
     })
     password: string;
 
+    @Column({
+        name: 'img',
+        type: 'varchar',
+        nullable: true
+    })
+    img: string;
+
     @ManyToOne(type => AdminRole, role => role.admins)
     @JoinColumn({name: "role_id"})
     role: AdminRole;
+
+    @ManyToMany(type => Permission, permission => permission.admins, {onDelete: "SET NULL"})
+    @JoinTable()
+    permissions?: Permission[];
 
     @ManyToOne(type => University, university => university.admins)
     @JoinColumn({name: "university_id"})

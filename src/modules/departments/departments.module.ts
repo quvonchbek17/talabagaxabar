@@ -7,6 +7,8 @@ import { Faculty } from 'src/entities/faculty.entity';
 import { AuthService } from '../auth/auth.service';
 import { Admin } from 'src/entities/admin.entity';
 import { JwtModule, JwtService } from '@nestjs/jwt';
+import { Permission } from '@entities';
+
 
 @Module({
   imports: [

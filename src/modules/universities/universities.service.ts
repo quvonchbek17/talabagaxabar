@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -18,25 +20,36 @@ export class UniversitiesService {
     private readonly universityRepo: Repository<University>,
   ) {}
   async create(body: CreateUniversityDto) {
-    let isDuplicate = await this.universityRepo.findOne({
-      where: { name: body.name },
-    });
-    if (isDuplicate) {
-      return new ConflictException("Bu universitet avval qo'shilgan");
-    }
-    let university = this.universityRepo.create(body);
-    await university.save();
-    return {
-      success: true,
-      data: university
-    }
+      try {
+        let isDuplicate = await this.universityRepo.findOne({
+          where: { name: body.name },
+        });
+        if (isDuplicate) {
+          throw new HttpException("Bu universitet avval qo'shilgan", HttpStatus.CONFLICT);
+        }
+        let university =  this.universityRepo.create(body);
+        await university.save();
+        return {
+          success: true,
+          message: "Yaratildi",
+          statusCode: HttpStatus.CREATED,
+          data: university
+        }
+      } catch (error) {
+          throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+      }
   }
 
   async findAll() {
-    return {
-      success: true,
-      data: await this.universityRepo.find()
-    };
+    try {
+      return {
+        success: true,
+        statusCode: HttpStatus.OK,
+        data: await this.universityRepo.find({select: ["id", "name"]})
+      };
+    } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+    }
   }
 
   async findOne(id: string) {
@@ -45,16 +58,14 @@ export class UniversitiesService {
       if(university){
         return {
           success: true,
+          statusCode: HttpStatus.OK,
           data: university
         }
       } else {
-        return  {
-          success: false,
-          message: "Bunday universitet yo'q"
-        }
+        throw new HttpException("Bunday universitet yo'q", HttpStatus.NOT_FOUND)
       }
     } catch (error) {
-      throw new InternalServerErrorException(error.message)
+      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
     }
   }
 
@@ -66,13 +77,14 @@ export class UniversitiesService {
         return {
           success: true,
           message: 'Yangilandi',
+          statusCode: HttpStatus.OK,
           data: await this.universityRepo.findOne({ where: { id }}),
         };
       } else {
-        return new NotFoundException("Bunday universitet yo'q");
+        throw new HttpException("Bunday universitet yo'q", HttpStatus.NOT_FOUND);
       }
     } catch (error) {
-      throw new InternalServerErrorException(error);
+      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -83,16 +95,14 @@ export class UniversitiesService {
         await this.universityRepo.remove(university)
         return {
           success: true,
+          statusCode: HttpStatus.OK,
           message: "O'chirildi"
         }
       } else {
-        return {
-          success: false,
-          message: "Bunday universitet yo'q"
-        }
+        throw new HttpException("Bunday universitet yo'q", HttpStatus.NOT_FOUND)
       }
   } catch (error) {
-    throw  new InternalServerErrorException(error);
+    throw  new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
   }
   }
 }

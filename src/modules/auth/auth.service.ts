@@ -1,10 +1,10 @@
-import { Injectable, ConflictException, NotFoundException, InternalServerErrorException, UnauthorizedException, Body, BadRequestException } from '@nestjs/common'
+import { Injectable, ConflictException, NotFoundException, InternalServerErrorException, UnauthorizedException, Body, BadRequestException, HttpException, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin } from 'src/entities/admin.entity';
 import { JwtService } from '@nestjs/jwt';
 import { Sign } from './dto/sign.dto';
 import { RequestUser } from 'src/common/interface/req-user.interface';
+import { Permission, Admin } from '@entities';
 
 @Injectable()
 export class AuthService {
@@ -16,35 +16,49 @@ export class AuthService {
 
     async Sign(@Body() body: Sign){
 
+      try {
         const admin = await this.admins.findOne({
             relations: {
-                role: true
+                role: true,
+                permissions: true
             },
             where: {
                 adminname: body.adminname,
                 password: body.password
             }
         })
-
+        let permissions =  (await Permission.find()).map(el => el.path)
+        let adminRole = admin.role.name
+        delete admin.role
         if(admin) {
-            const token = this.sign(admin.id)
+           const token = this.sign(admin.id)
             return {
                 success: true,
                 message: "Admin mavjud",
-                token: token,
-                role: admin.role.name
+                data: {
+                  token: token,
+                  role: adminRole,
+                  permissions: adminRole === "developer" || adminRole === "super_admin" ? permissions : admin.permissions ? admin.permissions.map(el => el.path) : []
+                }
             }
 
         } else {
-            throw new NotFoundException({message: "Admin topilmadi", status: 404})
+            throw new HttpException("admin topilmadi", HttpStatus.NOT_FOUND)
         }
+      } catch (error) {
+          throw new HttpException(error.message, error.status)
+      }
     }
 
 
     sign(payload: string) {
+       try {
         return this.JwtService.sign(payload, {
             secret: process.env.SECRET_KEY
         })
+       } catch (error) {
+          throw new HttpException(error.message, error.status)
+       }
     }
 
     verify(payload: string) {
@@ -52,12 +66,13 @@ export class AuthService {
           return this.JwtService.verify(payload, {
             secret: process.env.SECRET_KEY
           });
-        } catch(err) {
-          throw new BadRequestException({message: "Tokenda muammo bor", status: 400});
+        } catch(error) {
+          throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
         }
       }
 
     async validateUser(id: string){
+      try {
         const admin = await this.admins.findOne({
             where: {
                 id
@@ -68,10 +83,27 @@ export class AuthService {
         })
 
         if(!admin) {
-            throw new NotFoundException({message: "Admin topilmadi", status: 404})
+            throw new HttpException("Admin topilmadi", HttpStatus.NOT_FOUND)
         } else {
           return admin
         }
+      } catch (error) {
+          throw new HttpException(error.message, error.status)
+      }
 
+    }
+
+    async checkUserPermission(user_id: string, permissionPath: string) {
+      try {
+        let permission = await this.admins.createQueryBuilder("a")
+          .leftJoinAndSelect("a.permissions", "p")
+          .where("a.id = :user_id", { user_id })
+          .andWhere("p.path = :path", { path: permissionPath })
+          .getOne();
+
+        return permission;
+      } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+      }
     }
 }

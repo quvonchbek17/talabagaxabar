@@ -9,7 +9,7 @@
     "target": "es2017",
     "paths": {
       "@config": [
-        "./config"
+        "./src/config"
       ],
       "@entities": [
         "./src/entities"
@@ -19,6 +19,9 @@
       ],
       "@modules": [
         "./src/modules"
+      ],
+      "@guards": [
+        "./src/modules/auth/guards"
       ]
     },
     "sourceMap": true,
@@ -31,6 +34,6 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["reflect-metadata", "Multer", "node"]
+    "types": ["reflect-metadata", "multer", "node"]
   }
 }

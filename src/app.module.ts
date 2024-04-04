@@ -12,8 +12,27 @@ import { DirectionsModule } from './modules/directions/directions.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './modules/auth/auth.service';
 import { AdminsModule } from './modules/admins/admins.module';
-import { Admin } from './entities/admin.entity';
 import { FilesModule } from './modules/files/files.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import {
+  Admin,
+  AdminRole,
+  BaseModel,
+  BotUser,
+  BotAdmin,
+  Course,
+  Department,
+  Direction,
+  Education,
+  Faculty,
+  Group,
+  Location,
+  Permission,
+  Room,
+  Science,
+  Teacher,
+  University,
+} from '@entities';
 @Module({
   imports: [
     JwtModule.register({
@@ -21,13 +40,33 @@ import { FilesModule } from './modules/files/files.module';
     }),
     ConfigModule.forRoot(config),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),
+    TypeOrmModule.forFeature([
+      Admin,
+      AdminRole,
+      BaseModel,
+      BotUser,
+      BotAdmin,
+      Course,
+      Department,
+      Direction,
+      Education,
+      Faculty,
+      Group,
+      Location,
+      Permission,
+      Room,
+      Science,
+      Teacher,
+      University,
+    ]),
     FacultiesModule,
     AuthModule,
     DepartmentsModule,
     DirectionsModule,
     AdminsModule,
     UniversitiesModule,
-    FilesModule
-  ]
+    FilesModule,
+    PermissionsModule,
+  ],
 })
 export class AppModule {}

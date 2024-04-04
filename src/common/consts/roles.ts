@@ -3,5 +3,6 @@ export const rolesName = {
     university_admin: "university_admin",
     faculty_lead_admin: "faculty_lead_admin",
     faculty_admin: "faculty_admin",
-    public: "public"
+    public: "public",
+    developer: "developer"
 }

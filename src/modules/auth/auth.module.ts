@@ -3,17 +3,18 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Admin } from 'src/entities/admin.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { Permission, Admin  } from '@entities';
+import { PermissionsService } from "@modules"
 
 @Module({
   imports: [
     PassportModule,
-    TypeOrmModule.forFeature([ Admin ]),
+    TypeOrmModule.forFeature([ Admin, Permission ]),
     JwtModule.register({
         secret: process.env.SECRET_KEY
     })],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [AuthService, PermissionsService]
 })
 export class AuthModule {}

@@ -13,16 +13,20 @@ import * as path from 'path';
 export class FilesService {
   async deleteFiles(folder: string, fileName: string) {
     try {
-      fs.unlink(
-        path.join(process.cwd(), '..', 'uploads', folder, fileName),
-        (err) => {
-          if (err) {
-            return new InternalServerErrorException();
-          }
-        },
-      );
+      let filePath = path.join(process.cwd(), '..', 'uploads', folder, fileName)
+      if(fs.existsSync(filePath)){
+        fs.unlink(
+          path.join(process.cwd(), '..', 'uploads', folder, fileName),
+          (err) => {
+            if (err) {
+              throw new HttpException("file yuklashda nimadir xato ketdi. Qaytadan urining", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+          },
+        );
+      }
+
     } catch (error) {
-      throw new InternalServerErrorException(error.message);
+      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
   async saveFile(file: Express.Multer.File, folder: string): Promise<string> {
@@ -41,7 +45,7 @@ export class FilesService {
       this.saveFileToDisk(filePath, file.buffer);
       return filename;
     } catch (error) {
-      throw new InternalServerErrorException(error.message);
+      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -52,7 +56,11 @@ export class FilesService {
     width: number = 800,
     height: number = 500
   ) {
-    return await sharp(fileBuffer).resize(width, height).jpeg({quality}).toFile(filePath)
+    try {
+      return await sharp(fileBuffer).resize(width, height).jpeg({quality}).toFile(filePath)
+    } catch (error) {
+      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+    }
   }
 
 }
