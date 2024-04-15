@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { UniversitiesService } from './universities.service';
 import { CreateUniversityDto } from './dto/create.dto';
 import { UniversityParamsIdDto, UpdateUniversityDto } from './dto/update.dto';
@@ -18,9 +18,17 @@ export class UniversitiesController {
     return this.universitiesService.create(body)
   }
 
-  @Get()
+  @Get("all")
   findAll() {
     return this.universitiesService.findAll();
+  }
+
+  @Get()
+  pagination(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.universitiesService.pagination(page, limit);
   }
 
   @Get(':id')

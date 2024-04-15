@@ -52,6 +52,31 @@ export class UniversitiesService {
     }
   }
 
+  async pagination(page: number, limit: number) {
+    try {
+      let [universities, count] = await this.universityRepo
+        .createQueryBuilder("u")
+        .select(["u.id", "u.name"])
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getManyAndCount();
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: "success",
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: universities
+        }
+      };
+    } catch (error) {
+      return new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async findOne(id: string) {
     try {
       let university = await this.universityRepo.findOne({where: {id}});

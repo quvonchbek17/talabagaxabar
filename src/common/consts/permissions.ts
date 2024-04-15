@@ -1,6 +1,6 @@
 export const permissions = {
     admins: {
-        createAdmin: "/admins/create",
+        // createAdmin: "/admins/create",
         createUniversity: "/admins/universities/create",
         getUniversities: "/admins/universities/all",
         getUniversityById: "/admins/universities/:id",
