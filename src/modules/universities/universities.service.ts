@@ -8,10 +8,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUniversityDto } from './dto/create.dto';
-import { UniversityParamsIdDto, UpdateUniversityDto } from './dto/update.dto';
+import { UpdateUniversityDto } from './dto/update.dto';
 import { University } from 'src/entities/university.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 
 @Injectable()
 export class UniversitiesService {
@@ -75,6 +75,24 @@ export class UniversitiesService {
     } catch (error) {
       return new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async searchByName(searchedName: string){
+     try {
+        let universities = await this.universityRepo.find({
+         where: {
+          name: ILike(`%${searchedName}%`)
+         }
+        })
+
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          data: universities
+        }
+     } catch (error) {
+          throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+     }
   }
 
   async findOne(id: string) {

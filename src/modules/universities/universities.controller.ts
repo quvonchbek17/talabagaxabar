@@ -31,6 +31,13 @@ export class UniversitiesController {
     return this.universitiesService.pagination(page, limit);
   }
 
+  @Get("search")
+  searchByName(
+    @Query('name') name: string,
+  ) {
+    return this.universitiesService.searchByName(name);
+  }
+
   @Get(':id')
   findOne(@Param() params: UniversityParamsIdDto) {
     return this.universitiesService.findOne(params.id);
