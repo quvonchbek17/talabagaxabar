@@ -15,6 +15,6 @@ import { PermissionsService } from "@modules"
         secret: process.env.SECRET_KEY
     })],
   controllers: [AuthController],
-  providers: [AuthService, PermissionsService]
+  providers: [AuthService]
 })
 export class AuthModule {}

@@ -45,7 +45,7 @@ declare module 'express' {
 
           return true;
         } catch (error) {
-          throw new HttpException(error.message, HttpStatus.FORBIDDEN);
+          throw new HttpException(error.message, error.status || HttpStatus.FORBIDDEN);
         }
     }
   }

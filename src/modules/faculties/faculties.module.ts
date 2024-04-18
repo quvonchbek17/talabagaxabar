@@ -1,14 +1,17 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { University, Faculty, Admin } from '@entities';
 import { FacultiesService } from './faculties.service';
 import { FacultiesController } from './faculties.controller';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Faculty } from 'src/entities/faculty.entity';
-import { University } from 'src/entities/university.entity';
+import { AuthModule, AuthService } from '@modules';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([Faculty, University])],
+  imports:[
+    JwtModule,
+    TypeOrmModule.forFeature([Faculty, University, Admin])
+  ],
   controllers: [FacultiesController],
-  providers: [FacultiesService]
+  providers: [FacultiesService, AuthService]
 })
 export class FacultiesModule {}
