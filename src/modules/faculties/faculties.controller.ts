@@ -18,7 +18,7 @@ export class FacultiesController {
     return this.facultiesService.create(createFacultyDto, req.user.id);
   }
 
-  @SetRoles(rolesName.university_admin)
+  @SetRoles(rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get("all")
   findAll(@Req() req: Request) {
@@ -26,7 +26,7 @@ export class FacultiesController {
   }
 
 
-  @SetRoles(rolesName.university_admin)
+  @SetRoles(rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get()
   pagination(
@@ -48,20 +48,24 @@ export class FacultiesController {
     return this.facultiesService.searchByName(name, req.user.id);
   }
 
-  @SetRoles(rolesName.university_admin)
+  @SetRoles(rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get(':id')
   async findOne(@Param() params: any, @Req() req: Request) {
     return this.facultiesService.findOne(params.id, req.user.id);
   }
 
+  @SetRoles(rolesName.university_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateFacultyDto: UpdateFacultyDto) {
-    return this.facultiesService.update(+id, updateFacultyDto);
+  update(@Param() params: FacultyParamsIDDto, @Body() body: UpdateFacultyDto, @Req() req: Request) {
+    return this.facultiesService.update(params.id, body, req.user.id);
   }
 
+  @SetRoles(rolesName.university_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.facultiesService.remove(+id);
+  remove(@Param() params: FacultyParamsIDDto, @Req() req: Request) {
+    return this.facultiesService.remove(params.id, req.user.id);
   }
 }

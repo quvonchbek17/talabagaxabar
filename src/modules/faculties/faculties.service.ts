@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
 import { University } from 'src/entities/university.entity';
 import { Admin } from '@entities';
+import { rolesName } from '@common';
 
 @Injectable()
 export class FacultiesService {
@@ -69,8 +70,19 @@ export class FacultiesService {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
-        relations: { university: true },
+        relations: { university: true, role: true },
       });
+
+      if (admin.role?.name === rolesName.super_admin) {
+        let faculties = await this.facultyRepo.find({
+          relations: { university: true },
+        });
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          data: faculties,
+        };
+      }
 
       if (admin?.university) {
         let faculties = await this.facultyRepo.find({
@@ -99,96 +111,254 @@ export class FacultiesService {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
-        relations: { university: true },
+        relations: { university: true, role: true },
       });
 
-      if(!admin.university){
-        throw new HttpException("Sizning universitetingiz yo'q", HttpStatus.FORBIDDEN)
+      if (admin.role?.name === rolesName.super_admin) {
+        let faculty = await this.facultyRepo.findOne({
+          where: { id },
+          relations: { university: true },
+        });
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          data: faculty,
+        };
       }
-      let faculty = await this.facultyRepo.findOne({ where: { id, university: { id: admin.university.id } } });
+
+      if (!admin.university) {
+        throw new HttpException(
+          "Sizning universitetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      let faculty = await this.facultyRepo.findOne({
+        where: { id, university: { id: admin.university.id } },
+      });
       if (faculty) {
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: faculty
+          data: faculty,
         };
       } else {
-        throw new HttpException("Sizning universitetingizda bunday idlik fakultet yo'q", HttpStatus.NOT_FOUND);
+        throw new HttpException(
+          "Sizning universitetingizda bunday idlik fakultet yo'q",
+          HttpStatus.NOT_FOUND,
+        );
       }
     } catch (error) {
-      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
   async pagination(page: number, limit: number, adminId: string) {
     try {
-
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
-        relations: { university: true },
+        relations: { university: true, role: true },
       });
 
-      if(!admin.university){
-        throw new HttpException("Sizning universitetingiz yo'q", HttpStatus.FORBIDDEN)
+      if (admin.role.name === rolesName.super_admin) {
+        let [faculties, count] = await this.facultyRepo
+          .createQueryBuilder('f')
+          .innerJoin('f.university', 'u')
+          .select(['f.id', 'f.name', 'u.id', 'u.name'])
+          .offset((page - 1) * limit)
+          .limit(limit)
+          .getManyAndCount();
+
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          message: 'success',
+          data: {
+            currentPage: page,
+            currentCount: limit,
+            totalCount: count,
+            totalPages: Math.ceil(count / limit),
+            items: faculties,
+          },
+        };
+      }
+
+      if (!admin.university) {
+        throw new HttpException(
+          "Sizning universitetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
       }
 
       let [faculties, count] = await this.facultyRepo
-        .createQueryBuilder("f")
-        .select(["f.id", "f.name"])
+        .createQueryBuilder('f')
+        .select(['f.id', 'f.name'])
         .offset((page - 1) * limit)
         .limit(limit)
-        .where("f.university_id = :id", { id: admin.university.id })
+        .where('f.university_id = :id', { id: admin.university.id })
         .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
         success: true,
-        message: "success",
+        message: 'success',
         data: {
           currentPage: page,
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: faculties
-        }
+          items: faculties,
+        },
       };
     } catch (error) {
-      return new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
-  async searchByName(searchedName: string, adminId:string){
+  async searchByName(searchedName: string, adminId: string) {
+    try {
+      let admin = await this.adminRepo.findOne({
+        where: { id: adminId },
+        relations: { university: true, role: true },
+      });
+
+      if (admin.role?.name === rolesName.super_admin) {
+        let faculties = await this.facultyRepo.find({
+          where: {
+            name: ILike(`%${searchedName}%`),
+          },
+          relations: { university: true },
+        });
+
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          data: faculties,
+        };
+      }
+
+      if (!admin.university) {
+        throw new HttpException(
+          "Sizning universitetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      let faculties = await this.facultyRepo.find({
+        where: {
+          name: ILike(`%${searchedName}%`),
+          university: { id: admin.university.id },
+        },
+      });
+
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        data: faculties,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async update(id: string, body: UpdateFacultyDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { university: true },
       });
 
-      if(!admin.university){
-        throw new HttpException("Sizning universitetingiz yo'q", HttpStatus.FORBIDDEN)
+      if (!admin.university) {
+        throw new HttpException(
+          "Sizning universitetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
       }
 
-       let faculties = await this.facultyRepo.find({
-        where: {
-         name: ILike(`%${searchedName}%`),
-         university: {id: admin.university.id}
-        }
-       })
+      let faculty = await this.facultyRepo.findOne({
+        where: { id, university: { id: admin.university.id } },
+        relations: { university: true },
+      });
 
-       return {
-         statusCode: HttpStatus.OK,
-         success: true,
-         data: faculties
-       }
+      if (!faculty) {
+        throw new HttpException(
+          'Bunday fakultet mavjud emas yoki siz uchun ruxst berilmagan',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      let checkDuplicate = await this.facultyRepo.findOne({
+        where: { name: body.name, university: { id: admin.university.id } },
+        relations: { university: true },
+      });
+
+      if (checkDuplicate) {
+        throw new HttpException(
+          'Bu nomlik fakultet allaqachon mavjud',
+          HttpStatus.CONFLICT,
+        );
+      }
+      await this.facultyRepo.update(id, {
+        name: body.name,
+        updated_at: new Date(),
+      });
+      return {
+        success: true,
+        message: 'Yangilandi',
+        statusCode: HttpStatus.OK,
+        data: await this.facultyRepo.findOne({ where: { id } }),
+      };
     } catch (error) {
-         throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
     }
- }
-
-  update(id: number, updateFacultyDto: UpdateFacultyDto) {
-    return `This action updates a #${id} faculty`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} faculty`;
+  async remove(id: string, adminId: string) {
+    try {
+      let admin = await this.adminRepo.findOne({
+        where: { id: adminId },
+        relations: { university: true },
+      });
+
+      if (!admin.university) {
+        throw new HttpException(
+          "Sizning universitetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      let faculty = await this.facultyRepo.findOne({
+        where: { id, university: {id: admin.university.id}}
+      });
+
+      if (faculty) {
+        await this.facultyRepo.remove(faculty);
+        return {
+          success: true,
+          statusCode: HttpStatus.OK,
+          message: "O'chirildi",
+        };
+      } else {
+        throw new HttpException(
+          "Bunday fakultet yo'q",
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }

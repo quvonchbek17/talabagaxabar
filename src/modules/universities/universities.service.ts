@@ -73,7 +73,7 @@ export class UniversitiesService {
         }
       };
     } catch (error) {
-      return new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -91,7 +91,7 @@ export class UniversitiesService {
           data: universities
         }
      } catch (error) {
-          throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
      }
   }
 
@@ -115,6 +115,11 @@ export class UniversitiesService {
   async update(id: string, body: UpdateUniversityDto) {
     try {
       let university = await this.universityRepo.findOne({ where: { id } });
+      let checkDuplicate = await this.universityRepo.findOne({ where: { name: body.name } });
+
+      if(checkDuplicate){
+        throw new HttpException("Bu nomdagi universitet allaqchon mavjud", HttpStatus.CONFLICT)
+      }
       if (university) {
         await this.universityRepo.update(id, {name: body.name, updated_at: new Date()});
         return {

@@ -131,7 +131,8 @@ export class AdminsService {
           permissions: permissions?.map(el => {
             return {
               id: el.id,
-              path: el.path
+              path: el.path,
+              desc: el.desc
             }
           })
         },
@@ -147,12 +148,12 @@ export class AdminsService {
       let admins = await this.adminsRepo.createQueryBuilder("a")
       .leftJoinAndSelect("a.university", "u")
       .leftJoinAndSelect("a.permissions", "p")
-      .select(["a.id", "a.adminname", "u.id", "u.name", "p.path"])
+      .select(["a.id", "a.adminname", "u.id", "u.name", "p.path", "p.desc"])
       .getMany()
 
       let mappedAdmins = []
       for(let admin of admins){
-        let permissions = admin.permissions.map(el => el.path)
+        let permissions = admin.permissions.map(el => { return {path: el.path, desc: el.desc}})
         delete admin.permissions
         mappedAdmins.push({...admin, permissions})
       }
@@ -172,7 +173,7 @@ export class AdminsService {
         where: { id },
         relations: { university: true, permissions: true },
       });
-      let permissions = await Promise.all(admin.permissions.map(el => el.path))
+      let permissions = await Promise.all(admin.permissions.map(el => { return {path: el.path, desc: el.desc}}))
 
       if (admin) {
         delete admin.permissions
