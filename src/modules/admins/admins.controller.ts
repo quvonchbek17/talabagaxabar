@@ -2,12 +2,10 @@ import { Request } from 'express';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
 import {FileInterceptor} from "@nestjs/platform-express"
 import { AdminsService } from './admins.service';
-import { CreateUniversityAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminProfileDto } from './dto/update-admin.dto';
-import { SetPermission, SetRoles, rolesName, permissions } from '@common';
 import { JwtAuthGuard, HasRole, CheckPermission } from '@guards';
+import { SetPermission, SetRoles, rolesName, permissions } from '@common';
+import { CreateUniversityAdminDto, UpdateAdminProfileDto, CheckPasswordDto } from './dto';
 import { UniversityParamsIdDto } from '../universities/dto/update.dto';
-import { CheckPasswordDto } from './dto/check-password.dto';
 
 @Controller('admins')
 export class AdminsController {

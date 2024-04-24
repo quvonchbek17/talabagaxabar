@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { University, Faculty, Admin } from '@entities';
 import { FacultiesService } from './faculties.service';
 import { FacultiesController } from './faculties.controller';
-import { AuthModule, AuthService } from '@modules';
+import { AuthService } from '@modules';
 
 @Module({
   imports:[

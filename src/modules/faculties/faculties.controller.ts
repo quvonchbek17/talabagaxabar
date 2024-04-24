@@ -1,10 +1,8 @@
 import { Request } from 'express';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { FacultiesService } from './faculties.service';
-import { CreateFacultyDto } from './dto/create-faculty.dto';
-import { FacultyParamsIDDto, UpdateFacultyDto } from './dto/update-faculty.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt.auth.guard';
-import { HasRole } from '../auth/guards/roles.guard';
+import { CreateFacultyDto, UpdateFacultyDto, FacultyParamsIDDto } from './dto';
+import { JwtAuthGuard, HasRole } from '@guards';
 import { SetRoles, rolesName } from '@common';
 
 @Controller('faculties')

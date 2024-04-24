@@ -1,17 +1,12 @@
 import {
-  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
-import { CreateFacultyDto } from './dto/create-faculty.dto';
-import { UpdateFacultyDto } from './dto/update-faculty.dto';
-import { Faculty } from 'src/entities/faculty.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
-import { University } from 'src/entities/university.entity';
-import { Admin } from '@entities';
+import { CreateFacultyDto, UpdateFacultyDto } from './dto';
+import { Faculty, University, Admin } from '@entities';
 import { rolesName } from '@common';
 
 @Injectable()
@@ -19,8 +14,6 @@ export class FacultiesService {
   constructor(
     @InjectRepository(Faculty)
     private readonly facultyRepo: Repository<Faculty>,
-    @InjectRepository(University)
-    private readonly universityRepo: Repository<University>,
     @InjectRepository(Admin)
     private readonly adminRepo: Repository<Admin>,
   ) {}

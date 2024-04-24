@@ -1,11 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { SetRoles, rolesName } from '@common';
+import { HasRole, JwtAuthGuard } from '@guards';
 import { UniversitiesService } from './universities.service';
-import { CreateUniversityDto } from './dto/create.dto';
-import { UniversityParamsIdDto, UpdateUniversityDto } from './dto/update.dto';
-import { SetRoles } from 'src/common/decorators/set-roles.decorator';
-import { rolesName } from 'src/common/consts/roles';
-import { HasRole } from '../auth/guards/roles.guard';
-import { JwtAuthGuard } from '../auth/guards/jwt.auth.guard';
+import { CreateUniversityDto, UniversityParamsIdDto, UpdateUniversityDto } from './dto';
 
 @Controller('universities')
 export class UniversitiesController {

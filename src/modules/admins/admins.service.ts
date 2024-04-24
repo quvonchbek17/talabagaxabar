@@ -1,19 +1,13 @@
 import {
-  BadRequestException,
-  ConflictException,
-  HttpCode,
   HttpException,
   HttpStatus,
   Injectable,
-  InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { CreateUniversityAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminProfileDto } from './dto/update-admin.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin, University, AdminRole, Permission } from '@entities';
-import { rolesName } from 'src/common/consts/roles';
+import { rolesName } from '@common';
+import { CreateUniversityAdminDto, UpdateAdminProfileDto } from './dto';
 import { FilesService } from '../files/files.service';
 
 @Injectable()

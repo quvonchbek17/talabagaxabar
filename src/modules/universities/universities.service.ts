@@ -1,17 +1,12 @@
 import {
-  BadRequestException,
-  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
-  InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
-import { CreateUniversityDto } from './dto/create.dto';
-import { UpdateUniversityDto } from './dto/update.dto';
-import { University } from 'src/entities/university.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
+import { CreateUniversityDto, UpdateUniversityDto } from './dto';
+import { University } from '@entities';
 
 @Injectable()
 export class UniversitiesService {
