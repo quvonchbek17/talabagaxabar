@@ -35,7 +35,7 @@ export class FacultiesController {
     return this.facultiesService.pagination(page, limit, req.user.id);
   }
 
-  @SetRoles(rolesName.university_admin)
+  @SetRoles(rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get("search")
   searchByName(
@@ -50,20 +50,20 @@ export class FacultiesController {
   @UseGuards(JwtAuthGuard, HasRole)
   @Get(':id')
   async findOne(@Param() params: any, @Req() req: Request) {
-    return this.facultiesService.findOne(params.id, req.user.id);
+    return this.facultiesService.findOne(params?.id, req.user.id);
   }
 
   @SetRoles(rolesName.university_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Patch(':id')
   update(@Param() params: FacultyParamsIDDto, @Body() body: UpdateFacultyDto, @Req() req: Request) {
-    return this.facultiesService.update(params.id, body, req.user.id);
+    return this.facultiesService.update(params?.id, body, req.user.id);
   }
 
   @SetRoles(rolesName.university_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Delete(':id')
   remove(@Param() params: FacultyParamsIDDto, @Req() req: Request) {
-    return this.facultiesService.remove(params.id, req.user.id);
+    return this.facultiesService.remove(params?.id, req.user.id);
   }
 }

@@ -3,7 +3,7 @@ import { CreateDepartmentDto } from './create-department.dto';
 import { IsOptional, IsUUID } from 'class-validator';
 
 export class UpdateDepartmentDto extends PartialType(CreateDepartmentDto) {}
-export class DepartmentParamsDto {
+export class DepartmentParamsIdDto {
     @IsUUID()
     id: string;
 }

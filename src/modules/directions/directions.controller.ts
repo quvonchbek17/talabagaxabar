@@ -1,20 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Request } from "express"
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { JwtAuthGuard, HasRole } from '@guards';
+import { SetRoles, rolesName } from '@common';
 import { DirectionsService } from './directions.service';
-import { CreateDirectionDto } from './dto/create-direction.dto';
-import { UpdateDirectionDto } from './dto/update-direction.dto';
+import { CreateDirectionDto, UpdateDirectionDto } from './dto';
 
 @Controller('directions')
 export class DirectionsController {
   constructor(private readonly directionsService: DirectionsService) {}
 
-  @Post()
-  create(@Body() createDirectionDto: CreateDirectionDto) {
-    return this.directionsService.create(createDirectionDto);
+  @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
+  @Post("create")
+  create(@Body() body: CreateDirectionDto, @Req() req: Request) {
+    return this.directionsService.create(body, req.user.id);
   }
 
-  @Get()
-  findAll() {
-    return this.directionsService.findAll();
+  @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
+  @Get("all")
+  findAll(@Req() req: Request) {
+    return this.directionsService.findAll(req.user.id);
   }
 
   @Get(':id')
