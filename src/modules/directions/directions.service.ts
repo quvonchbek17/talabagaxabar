@@ -1,10 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateDirectionDto } from './dto/create-direction.dto';
-import { UpdateDirectionDto } from './dto/update-direction.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Direction, Admin } from '@entities';
 import { ILike, Repository } from 'typeorm';
+import { Direction, Admin } from '@entities';
 import { rolesName } from '@common';
+import { CreateDirectionDto, UpdateDirectionDto } from './dto';
 
 @Injectable()
 export class DirectionsService {
