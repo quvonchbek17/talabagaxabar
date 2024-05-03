@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto, UpdateDepartmentDto, DepartmentParamsIdDto } from './dto';
 import { HasRole, JwtAuthGuard } from '@guards';
@@ -18,32 +18,22 @@ export class DepartmentsController {
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
-  @Get("all")
-  findAll(@Req() req: Request) {
-    return this.departmentsService.findAll(req.user.id);
-  }
-
-  @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
-  @UseGuards(JwtAuthGuard, HasRole)
   @Get()
-  pagination(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Req() req: Request
-  ) {
-    return this.departmentsService.pagination(page, limit, req.user.id);
+  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('search') search: string, @Query() allquery: any) {
+       try {
+        if (search) {
+          return this.departmentsService.searchByName(search, req.user.id);
+        } else if (page && limit) {
+          return this.departmentsService.pagination(page, limit, req.user.id);
+        } else if(Object.keys(allquery).length === 0) {
+          return this.departmentsService.findAll(req.user.id);
+        } else {
+          throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
+        }
+       } catch (error) {
+           throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+       }
   }
-
-  @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
-  @UseGuards(JwtAuthGuard, HasRole)
-  @Get("search")
-  searchByName(
-    @Query('name') name: string,
-    @Req() req: Request
-  ) {
-    return this.departmentsService.searchByName(name, req.user.id);
-  }
-
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
