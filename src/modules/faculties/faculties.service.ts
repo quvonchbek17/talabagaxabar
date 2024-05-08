@@ -61,31 +61,57 @@ export class FacultiesService {
 
   async findAll(adminId: string) {
     try {
+      let page = 1
+      let limit = 10
+
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { university: true, role: true },
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let faculties = await this.facultyRepo.find({
-          relations: { university: true },
-        });
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          data: faculties,
-        };
+        let [faculties, count] = await this.facultyRepo
+        .createQueryBuilder('f')
+        .innerJoin('f.university', 'u')
+        .select(['f.id', 'f.name', 'u.id', 'u.name'])
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getManyAndCount();
+
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: faculties,
+        },
+      };
       }
 
       if (admin?.university) {
-        let faculties = await this.facultyRepo.find({
-          where: { university: { id: admin.university.id } },
-        });
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          data: faculties,
-        };
+        let [faculties, count] = await this.facultyRepo
+        .createQueryBuilder('f')
+        .select(['f.id', 'f.name'])
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .where('f.university_id = :id', { id: admin.university.id })
+        .getManyAndCount();
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: faculties,
+        },
+      }
       } else {
         throw new HttpException(
           "Sizning universitetingiz yo'q",
@@ -212,25 +238,36 @@ export class FacultiesService {
     }
   }
 
-  async searchByName(searchedName: string, adminId: string) {
+  async searchByName(searchedName: string, page: number, limit: number, adminId: string) {
     try {
+      page = page ? page : 1
+      limit = limit ? limit : 10
+
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { university: true, role: true },
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let faculties = await this.facultyRepo.find({
-          where: {
-            name: ILike(`%${searchedName}%`),
-          },
-          relations: { university: true },
-        });
-
+        let [faculties, count] = await this.facultyRepo
+        .createQueryBuilder('f')
+        .innerJoin('f.university', 'u')
+        .select(['f.id', 'f.name', 'u.id', 'u.name'])
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .where('f.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+        .getManyAndCount();
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: faculties,
+          message: 'success',
+          data: {
+            currentPage: page,
+            currentCount: limit,
+            totalCount: count,
+            totalPages: Math.ceil(count / limit),
+            items: faculties,
+          },
         };
       }
 
@@ -241,17 +278,25 @@ export class FacultiesService {
         );
       }
 
-      let faculties = await this.facultyRepo.find({
-        where: {
-          name: ILike(`%${searchedName}%`),
-          university: { id: admin.university.id },
-        },
-      });
-
+      let [faculties, count] = await this.facultyRepo
+      .createQueryBuilder('f')
+      .select(['f.id', 'f.name'])
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .where('f.university_id = :id', { id: admin.university.id })
+      .andWhere('f.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
         success: true,
-        data: faculties,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: faculties,
+        },
       };
     } catch (error) {
       throw new HttpException(

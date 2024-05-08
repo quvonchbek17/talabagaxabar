@@ -1,6 +1,9 @@
-import { IsArray, IsString, IsUUID, MaxLength, MinLength } from "class-validator";
+import { IsArray, IsBoolean, IsOptional, IsString, IsUUID, MaxLength, MinLength } from "class-validator";
 
-export class CreateUniversityAdminDto {
+export class CreateAdminDto {
+    @IsString()
+    readonly fullname: string;
+
     @IsString()
     readonly adminname: string;
 
@@ -9,7 +12,17 @@ export class CreateUniversityAdminDto {
 
     @IsString()
     @IsUUID()
+    @IsOptional()
     readonly university_id: string;
+
+    @IsString()
+    @IsUUID()
+    @IsOptional()
+    readonly faculty_id: string;
+
+    @IsBoolean()
+    @IsOptional()
+    readonly isLead: string;
 
 
     @IsArray()

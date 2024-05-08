@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import { University, AdminRole, Admin } from '@entities';
+import { University, AdminRole, Admin, Faculty } from '@entities';
 import { AdminsService } from './admins.service';
 import { AdminsController } from './admins.controller';
 import { AuthService } from '../auth/auth.service';
@@ -10,7 +10,7 @@ import { FilesService } from '../files/files.service';
 @Module({
   imports: [
     JwtModule,
-    TypeOrmModule.forFeature([ Admin, University, AdminRole ])
+    TypeOrmModule.forFeature([ Admin, University, AdminRole, Faculty ])
   ],
   controllers: [AdminsController],
   providers: [AdminsService, AuthService, FilesService]

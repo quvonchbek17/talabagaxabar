@@ -1,8 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Req,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { SetRoles, rolesName } from '@common';
 import { HasRole, JwtAuthGuard } from '@guards';
 import { UniversitiesService } from './universities.service';
-import { CreateUniversityDto, UniversityParamsIdDto, UpdateUniversityDto } from './dto';
+import {
+  CreateUniversityDto,
+  UniversityParamsIdDto,
+  UpdateUniversityDto,
+} from './dto';
 
 @Controller('universities')
 export class UniversitiesController {
@@ -10,29 +29,38 @@ export class UniversitiesController {
 
   @SetRoles(rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
-  @Post("create")
+  @Post('create')
   async create(@Body() body: CreateUniversityDto) {
-    return this.universitiesService.create(body)
-  }
-
-  @Get("all")
-  findAll() {
-    return this.universitiesService.findAll();
+    return this.universitiesService.create(body);
   }
 
   @Get()
-  pagination(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  async findAll(
+    @Req() req: Request,
+    @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number,
+    @Query('search') search: string,
+    @Query() allquery: any,
   ) {
-    return this.universitiesService.pagination(page, limit);
-  }
-
-  @Get("search")
-  searchByName(
-    @Query('name') name: string,
-  ) {
-    return this.universitiesService.searchByName(name);
+    try {
+      if (search) {
+        return this.universitiesService.searchByName(search, page, limit);
+      } else if (page && limit) {
+        return this.universitiesService.pagination(page, limit);
+      } else if (Object.keys(allquery).length === 0) {
+        return this.universitiesService.findAll();
+      } else {
+        throw new HttpException(
+          "Bunday so'rov mavjud emas",
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @Get(':id')
@@ -43,7 +71,10 @@ export class UniversitiesController {
   @SetRoles(rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Patch(':id')
-  update(@Param() params: UniversityParamsIdDto, @Body() updateUniversityDto: UpdateUniversityDto) {
+  update(
+    @Param() params: UniversityParamsIdDto,
+    @Body() updateUniversityDto: UpdateUniversityDto,
+  ) {
     return this.universitiesService.update(params.id, updateUniversityDto);
   }
 

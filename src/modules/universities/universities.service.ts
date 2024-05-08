@@ -37,11 +37,27 @@ export class UniversitiesService {
 
   async findAll() {
     try {
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        data: await this.universityRepo.find({select: ["id", "name"]})
-      };
+      let page = 1
+      let limit = 10
+      let [universities, count] = await this.universityRepo
+      .createQueryBuilder('u')
+      .select(['u.id', 'u.name'])
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getManyAndCount();
+
+    return {
+      statusCode: HttpStatus.OK,
+      success: true,
+      message: 'success',
+      data: {
+        currentPage: page,
+        currentCount: limit,
+        totalCount: count,
+        totalPages: Math.ceil(count / limit),
+        items: universities,
+      },
+    };
     } catch (error) {
         throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
     }
@@ -72,19 +88,29 @@ export class UniversitiesService {
     }
   }
 
-  async searchByName(searchedName: string){
+  async searchByName(searchedName: string, page: number, limit: number){
      try {
-        let universities = await this.universityRepo.find({
-         where: {
-          name: ILike(`%${searchedName}%`)
-         }
-        })
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          data: universities
-        }
+      page = page ? page : 1
+      limit = limit ? limit : 10
+      let [universities, count] = await this.universityRepo
+      .createQueryBuilder('u')
+      .select(['u.id', 'u.name'])
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .where('u.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .getManyAndCount();
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: universities,
+        },
+      };
      } catch (error) {
         throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
      }

@@ -12,6 +12,14 @@ export class Admin extends BaseModel {
     adminname: string;
 
     @Column({
+        name: 'fullname',
+        type: 'varchar',
+        unique: false,
+        nullable: true
+    })
+    fullname: string;
+
+    @Column({
         name: 'password',
         type: 'varchar'
     })

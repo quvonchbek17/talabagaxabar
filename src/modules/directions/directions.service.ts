@@ -61,31 +61,57 @@ export class DirectionsService {
 
   async findAll(adminId: string) {
     try {
+      let page = 1
+      let limit = 10
+
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let directions = await this.directionRepo.find({
-          relations: { faculty: true },
-        });
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          data: directions,
-        };
+        let [directions, count] = await this.directionRepo
+        .createQueryBuilder('d')
+        .innerJoin('d.faculty', 'f')
+        .select(['d.id', 'd.name', 'f.id', 'f.name'])
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getManyAndCount();
+
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: directions,
+        },
+      };
       }
 
       if (admin?.faculty) {
-        let directions = await this.directionRepo.find({
-          where: { faculty: { id: admin.faculty.id } },
-        });
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          data: directions,
-        };
+        let [directions, count] = await this.directionRepo
+        .createQueryBuilder('d')
+        .select(['d.id', 'd.name'])
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .where('d.faculty_id = :id', { id: admin.faculty.id })
+        .getManyAndCount();
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: directions,
+        },
+      }
       } else {
         throw new HttpException(
           "Sizning fakultetingiz yo'q",
@@ -165,26 +191,38 @@ export class DirectionsService {
   }
 
 
-  async searchByName(searchedName: string, adminId: string) {
+  async searchByName(searchedName: string, page: number, limit: number, adminId: string) {
     try {
+      page = page ? page : 1
+      limit = limit ? limit : 10
+
+
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let directions = await this.directionRepo.find({
-          where: {
-            name: ILike(`%${searchedName}%`),
-          },
-          relations: { faculty: true },
-        });
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          data: directions,
-        };
+      let [directions, count] = await this.directionRepo
+      .createQueryBuilder('d')
+      .innerJoin('d.faculty', 'f')
+      .select(['d.id', 'd.name', 'f.id', 'f.name'])
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .where('d.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .getManyAndCount();
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: directions,
+        },
+      };
       }
 
       if (!admin.faculty) {
@@ -194,17 +232,25 @@ export class DirectionsService {
         );
       }
 
-      let directions = await this.directionRepo.find({
-        where: {
-          name: ILike(`%${searchedName}%`),
-          faculty: { id: admin.faculty.id },
-        },
-      });
-
+      let [directions, count] = await this.directionRepo
+      .createQueryBuilder('d')
+      .select(['d.id', 'd.name'])
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .where('d.faculty_id = :id', { id: admin.faculty.id })
+      .andWhere('d.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
         success: true,
-        data: directions,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: directions,
+        },
       };
     } catch (error) {
       throw new HttpException(

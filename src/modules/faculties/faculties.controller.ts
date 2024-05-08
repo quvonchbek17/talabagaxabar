@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { FacultiesService } from './faculties.service';
 import { CreateFacultyDto, UpdateFacultyDto, FacultyParamsIDDto } from './dto';
 import { JwtAuthGuard, HasRole } from '@guards';
@@ -18,33 +18,22 @@ export class FacultiesController {
 
   @SetRoles(rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
-  @Get("all")
-  findAll(@Req() req: Request) {
-    return this.facultiesService.findAll(req.user.id);
-  }
-
-
-  @SetRoles(rolesName.university_admin, rolesName.super_admin)
-  @UseGuards(JwtAuthGuard, HasRole)
   @Get()
-  pagination(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Req() req: Request
-  ) {
-    return this.facultiesService.pagination(page, limit, req.user.id);
-  }
-
-  @SetRoles(rolesName.university_admin, rolesName.super_admin)
-  @UseGuards(JwtAuthGuard, HasRole)
-  @Get("search")
-  searchByName(
-    @Query('name') name: string,
-    @Req() req: Request
-  ) {
-
-    return this.facultiesService.searchByName(name, req.user.id);
-  }
+  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('search') search: string, @Query() allquery: any) {
+    try {
+     if (search) {
+       return this.facultiesService.searchByName(search, page, limit, req.user.id);
+     } else if (page && limit) {
+       return this.facultiesService.pagination(page, limit, req.user.id);
+     } else if(Object.keys(allquery).length === 0) {
+       return this.facultiesService.findAll(req.user.id);
+     } else {
+       throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
+     }
+    } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+    }
+}
 
   @SetRoles(rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
