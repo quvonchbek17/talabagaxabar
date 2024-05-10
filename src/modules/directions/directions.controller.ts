@@ -51,7 +51,7 @@ export class DirectionsController {
   ) {
     try {
       if (search) {
-        return this.directionsService.searchByName(
+        return this.directionsService.search(
           search,
           page,
           limit,

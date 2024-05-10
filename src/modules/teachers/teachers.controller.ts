@@ -1,11 +1,12 @@
 import { Request } from "express"
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { TeachersService } from './teachers.service';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
 import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard } from "../auth/guards/jwt.auth.guard";
 import { HasRole } from "../auth/guards/roles.guard";
+import { TeacherParamsIdDto } from "./dto";
 
 @Controller('teachers')
 export class TeachersController {
@@ -21,45 +22,44 @@ export class TeachersController {
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
-  @Get("all")
-  findAll(@Req() req: Request) {
-    return this.teachersService.findAll(req.user.id);
-  }
-
-  @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
-  @UseGuards(JwtAuthGuard, HasRole)
   @Get()
-  pagination(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Req() req: Request
-  ) {
-    return this.teachersService.pagination(page, limit, req.user.id);
-  }
-
-  @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
-  @UseGuards(JwtAuthGuard, HasRole)
-  @Get("search")
-  searchByName(
-    @Query('str') str: string,
-    @Req() req: Request
-  ) {
-    return this.teachersService.searchByName(str, req.user.id);
-  }
+  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('search') search: string, @Query() allquery: any) {
+    try {
+     if (search) {
+       return this.teachersService.search(search, page, limit, req.user.id);
+     } else if (page && limit) {
+       return this.teachersService.pagination(page, limit, req.user.id);
+     } else if(Object.keys(allquery).length === 0) {
+       return this.teachersService.findAll(req.user.id);
+     } else {
+       throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
+     }
+    } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+    }
+}
 
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.teachersService.findOne(+id);
-  }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
-    return this.teachersService.update(+id, updateTeacherDto);
-  }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.teachersService.remove(+id);
-  }
+@SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
+@UseGuards(JwtAuthGuard, HasRole)
+@Get(':id')
+async findOne(@Param() params: TeacherParamsIdDto, @Req() req: Request) {
+  return this.teachersService.findOne(params?.id, req.user.id);
+}
+
+@SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin)
+@UseGuards(JwtAuthGuard, HasRole)
+@Patch(':id')
+update(@Param() params: TeacherParamsIdDto, @Body() body: UpdateTeacherDto, @Req() req: Request) {
+  return this.teachersService.update(params?.id, body, req.user.id);
+}
+
+@SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin)
+@UseGuards(JwtAuthGuard, HasRole)
+@Delete(':id')
+remove(@Param() params: TeacherParamsIdDto, @Req() req: Request) {
+  return this.teachersService.remove(params?.id, req.user.id);
+}
 }

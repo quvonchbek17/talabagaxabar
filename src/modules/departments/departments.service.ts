@@ -133,7 +133,7 @@ export class DepartmentsService {
         relations: { faculty: true, role: true },
       });
 
-      if (admin.role.name === rolesName.super_admin) {
+      if (admin.role?.name === rolesName.super_admin) {
         let [departments, count] = await this.departmentRepo
           .createQueryBuilder('d')
           .innerJoin('d.faculty', 'f')
@@ -190,7 +190,7 @@ export class DepartmentsService {
     }
   }
 
-  async searchByName(searchedName: string, page: number, limit: number, adminId: string) {
+  async search(search: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
@@ -209,7 +209,7 @@ export class DepartmentsService {
       .select(['d.id', 'd.name', 'f.id', 'f.name'])
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('d.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .where('d.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -238,7 +238,7 @@ export class DepartmentsService {
       .offset((page - 1) * limit)
       .limit(limit)
       .where('d.faculty_id = :id', { id: admin.faculty.id })
-      .andWhere('d.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .andWhere('d.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,

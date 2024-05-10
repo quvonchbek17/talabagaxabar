@@ -1,4 +1,17 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateTeacherDto } from './create-teacher.dto';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
-export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {}
+export class UpdateTeacherDto {
+    @IsString()
+    @IsNotEmpty()
+    @IsOptional()
+    readonly name: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @IsOptional()
+    readonly surname: string;
+
+    @IsUUID()
+    @IsOptional()
+    readonly department_id: string;
+}

@@ -191,7 +191,7 @@ export class DirectionsService {
   }
 
 
-  async searchByName(searchedName: string, page: number, limit: number, adminId: string) {
+  async search(search: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
@@ -209,7 +209,7 @@ export class DirectionsService {
       .select(['d.id', 'd.name', 'f.id', 'f.name'])
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('d.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .where('d.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -238,7 +238,7 @@ export class DirectionsService {
       .offset((page - 1) * limit)
       .limit(limit)
       .where('d.faculty_id = :id', { id: admin.faculty.id })
-      .andWhere('d.name ILike :searchedName', { searchedName: `%${searchedName}%` })
+      .andWhere('d.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
