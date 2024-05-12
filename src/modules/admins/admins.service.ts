@@ -408,13 +408,14 @@ export class AdminsService {
 
       let filename = '';
       if (file) {
-        this.filesService.deleteFiles('avatars', admin.img);
+        this.filesService.deleteFiles('avatars', admin?.img);
         filename = await this.filesService.saveFile(file, 'avatars');
       }
 
       await this.adminsRepo.update(id, {
         adminname: body.adminname,
         password: body.newpassword,
+        fullname: body.fullname,
         img: filename !== '' ? filename : admin.img,
         updated_at: new Date(),
       });
@@ -469,7 +470,7 @@ export class AdminsService {
             faculty: { university: {id: admin.university?.id} },
           },
         });
-        
+
         if (deletedAdmin) {
           await this.adminsRepo.remove(deletedAdmin);
           return {

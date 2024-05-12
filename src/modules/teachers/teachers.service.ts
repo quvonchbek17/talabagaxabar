@@ -339,6 +339,7 @@ export class TeachersService {
       }
       let teacher = await this.teacherRepo.findOne({
         where: { id, faculty: { id: admin.faculty?.id } },
+        relations: {department: true}
       });
       if (teacher) {
         return {

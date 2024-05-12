@@ -13,7 +13,7 @@ import * as path from 'path';
 export class FilesService {
   async deleteFiles(folder: string, fileName: string) {
     try {
-      let filePath = path.join(process.cwd(), '..', 'uploads', folder, fileName)
+      let filePath = path.join(process.cwd(), '..', 'uploads', folder, fileName || "rasm")
       if(fs.existsSync(filePath)){
         fs.unlink(
           path.join(process.cwd(), '..', 'uploads', folder, fileName),
@@ -26,7 +26,7 @@ export class FilesService {
       }
 
     } catch (error) {
-      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
+      return new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
   }
   async saveFile(file: Express.Multer.File, folder: string): Promise<string> {
@@ -52,12 +52,10 @@ export class FilesService {
   private async saveFileToDisk(
     filePath: string,
     fileBuffer: Buffer,
-    quality: number = 100,
-    width: number = 800,
-    height: number = 500
+    quality: number = 100
   ) {
     try {
-      return await sharp(fileBuffer).resize(width, height).jpeg({quality}).toFile(filePath)
+      return await sharp(fileBuffer).jpeg({quality}).toFile(filePath)
     } catch (error) {
       throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
     }
