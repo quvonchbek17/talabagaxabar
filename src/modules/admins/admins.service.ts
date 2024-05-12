@@ -299,7 +299,7 @@ export class AdminsService {
           .createQueryBuilder('a')
           .innerJoin('a.role', 'r')
           .innerJoin('a.university', 'u')
-          .select(['a.id', 'a.fullname', 'a.adminname', 'u.id', 'u.name'])
+          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'u.id', 'u.name'])
           .where('r.name = :role', { role: rolesName.university_admin })
           .getManyAndCount();
 
@@ -320,7 +320,7 @@ export class AdminsService {
           .innerJoin('a.role', 'r')
           .innerJoin('a.faculty', 'f')
           .innerJoin('f.university', 'u')
-          .select(['a.id', 'a.fullname', 'a.adminname', 'f.id', 'f.name'])
+          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'f.id', 'f.name'])
           .where('(r.name = :role1 OR r.name = :role2)', {
             role1: rolesName.faculty_admin,
             role2: rolesName.faculty_lead_admin,
@@ -347,7 +347,7 @@ export class AdminsService {
           .innerJoin('a.role', 'r')
           .innerJoin('a.faculty', 'f')
           .innerJoin('f.university', 'u')
-          .select(['a.id', 'a.fullname', 'a.adminname', 'f.id', 'f.name'])
+          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'f.id', 'f.name'])
           .where('r.name = :role', { role: rolesName.faculty_admin })
           .andWhere('f.id = :facultyId', { facultyId: admin.faculty?.id })
           .getManyAndCount();
@@ -362,7 +362,7 @@ export class AdminsService {
           },
         };
       } else {
-        return new HttpException('Ruxsatga ega emassiz', HttpStatus.FORBIDDEN);
+        throw new HttpException('Ruxsatga ega emassiz', HttpStatus.FORBIDDEN);
       }
     } catch (error) {
       throw new HttpException(
