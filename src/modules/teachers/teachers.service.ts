@@ -463,7 +463,7 @@ export class TeachersService {
         relations: { faculty: true },
       });
 
-      if (checkDuplicate) {
+      if (checkDuplicate && body.name && body.surname) {
         throw new HttpException(
           "Bu o'qituvchi allaqachon mavjud",
           HttpStatus.CONFLICT,
