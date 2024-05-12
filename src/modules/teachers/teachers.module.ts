@@ -3,13 +3,13 @@ import { TeachersService } from './teachers.service';
 import { TeachersController } from './teachers.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Admin, Department, Teacher } from '@entities';
+import { Admin, Department, Science, Teacher } from '@entities';
 import { AuthService } from '../auth';
 
 @Module({
   imports: [
     JwtModule,
-    TypeOrmModule.forFeature([Teacher, Admin, Department])
+    TypeOrmModule.forFeature([Teacher, Admin, Department, Science])
   ],
   controllers: [TeachersController],
   providers: [TeachersService, AuthService]

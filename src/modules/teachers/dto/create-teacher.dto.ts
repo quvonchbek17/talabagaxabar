@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsArray, IsNotEmpty, IsString, IsUUID } from "class-validator";
 
 export class CreateTeacherDto {
     @IsString()
@@ -11,4 +11,8 @@ export class CreateTeacherDto {
 
     @IsUUID()
     readonly department_id: string;
+
+    @IsArray()
+    @IsUUID(undefined, { each: true })
+    readonly sciences: string[];
 }

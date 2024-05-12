@@ -19,7 +19,6 @@ export class TeachersController {
     return this.teachersService.create(body, req.user.id);
   }
 
-
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get()

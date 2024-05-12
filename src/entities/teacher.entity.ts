@@ -1,7 +1,8 @@
-import { Entity, Column, OneToMany, OneToOne, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, OneToMany, OneToOne, ManyToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm'
 import { BaseModel } from './model.entity';
 import { Faculty } from './faculty.entity';
 import { Department } from './department.entity';
+import { Science } from './science.entity';
 
 @Entity("teachers")
 export class Teacher extends BaseModel {
@@ -25,5 +26,9 @@ export class Teacher extends BaseModel {
     @ManyToOne(type => Faculty, faculty => faculty.teachers)
     @JoinColumn({name: "faculty_id"})
     faculty: Faculty;
+
+    @ManyToMany(type => Science, science => science.teachers, {onDelete: "SET NULL"})
+    @JoinTable()
+    sciences?: Science[];
 
 }

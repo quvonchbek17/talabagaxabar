@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Admin, Department, Teacher } from '@entities';
+import { Admin, Department, Science, Teacher } from '@entities';
 import { ILike, Repository } from 'typeorm';
 import { rolesName } from '@common';
 
@@ -15,6 +15,8 @@ export class TeachersService {
     readonly adminRepo: Repository<Admin>,
     @InjectRepository(Department)
     readonly departmentRepo: Repository<Department>,
+    @InjectRepository(Science)
+    readonly scienceRepo: Repository<Science>,
   ) {}
   async create(body: CreateTeacherDto, adminId: string) {
     try {
@@ -58,10 +60,20 @@ export class TeachersService {
         );
       }
 
+      let { nonExistingScienceIds, existingSciences } =
+        await this.checkExistingSciences(body?.sciences);
+      if (nonExistingScienceIds.length > 0) {
+        throw new HttpException(
+          `${nonExistingScienceIds.join(', ')} idlik fanlar mavjud emas`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       let teacher = this.teacherRepo.create({
         name: body.name,
         surname: body.surname,
         department: department,
+        sciences: existingSciences,
         faculty: admin.faculty,
       });
       await teacher.save();
@@ -87,8 +99,8 @@ export class TeachersService {
 
   async findAll(adminId: string) {
     try {
-      let page = 1
-      let limit = 10
+      let page = 1;
+      let limit = 10;
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
@@ -99,6 +111,7 @@ export class TeachersService {
           .createQueryBuilder('t')
           .innerJoin('t.department', 'd')
           .innerJoin('t.faculty', 'f')
+          .leftJoinAndSelect('t.sciences', 's')
           .select([
             't.id',
             't.name',
@@ -107,6 +120,8 @@ export class TeachersService {
             'f.name',
             'd.id',
             'd.name',
+            's.id',
+            's.name',
           ])
           .offset((page - 1) * limit)
           .limit(limit)
@@ -127,24 +142,34 @@ export class TeachersService {
 
       if (admin?.faculty) {
         let [teachers, count] = await this.teacherRepo
-        .createQueryBuilder('t')
-        .select(['t.id', 't.name', 't.surname'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('t.faculty_id = :id', { id: admin.faculty.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: teachers,
-        },
-      };
+          .createQueryBuilder('t')
+          .leftJoinAndSelect('t.department', 'd')
+          .leftJoinAndSelect('t.sciences', 's')
+          .select([
+            't.id',
+            't.name',
+            't.surname',
+            'd.id',
+            'd.name',
+            's.id',
+            's.name',
+          ])
+          .offset((page - 1) * limit)
+          .limit(limit)
+          .where('t.faculty_id = :id', { id: admin.faculty.id })
+          .getManyAndCount();
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          message: 'success',
+          data: {
+            currentPage: page,
+            currentCount: limit,
+            totalCount: count,
+            totalPages: Math.ceil(count / limit),
+            items: teachers,
+          },
+        };
       } else {
         throw new HttpException(
           "Sizning fakultetingiz yo'q",
@@ -171,6 +196,7 @@ export class TeachersService {
           .createQueryBuilder('t')
           .innerJoin('t.department', 'd')
           .innerJoin('t.faculty', 'f')
+          .leftJoinAndSelect('t.sciences', 's')
           .select([
             't.id',
             't.name',
@@ -179,6 +205,8 @@ export class TeachersService {
             'f.name',
             'd.id',
             'd.name',
+            's.id',
+            's.name',
           ])
           .offset((page - 1) * limit)
           .limit(limit)
@@ -206,7 +234,17 @@ export class TeachersService {
 
       let [teachers, count] = await this.teacherRepo
         .createQueryBuilder('t')
-        .select(['t.id', 't.name', 't.surname'])
+        .leftJoinAndSelect('t.department', 'd')
+        .leftJoinAndSelect('t.sciences', 's')
+        .select([
+          't.id',
+          't.name',
+          't.surname',
+          'd.id',
+          'd.name',
+          's.id',
+          's.name',
+        ])
         .offset((page - 1) * limit)
         .limit(limit)
         .where('t.faculty_id = :id', { id: admin.faculty.id })
@@ -246,6 +284,7 @@ export class TeachersService {
           .createQueryBuilder('t')
           .innerJoin('t.department', 'd')
           .innerJoin('t.faculty', 'f')
+          .leftJoinAndSelect('t.sciences', 's')
           .select([
             't.id',
             't.name',
@@ -254,6 +293,8 @@ export class TeachersService {
             'f.name',
             'd.id',
             'd.name',
+            's.id',
+            's.name',
           ])
           .offset((page - 1) * limit)
           .limit(limit)
@@ -284,7 +325,17 @@ export class TeachersService {
 
       let [teachers, count] = await this.teacherRepo
         .createQueryBuilder('t')
-        .select(['t.id', 't.name', 't.surname'])
+        .leftJoinAndSelect('t.department', 'd')
+        .leftJoinAndSelect('t.sciences', 's')
+        .select([
+          't.id',
+          't.name',
+          't.surname',
+          'd.id',
+          'd.name',
+          's.id',
+          's.name',
+        ])
         .offset((page - 1) * limit)
         .limit(limit)
         .where('t.faculty_id = :id', { id: admin.faculty.id })
@@ -339,7 +390,7 @@ export class TeachersService {
       }
       let teacher = await this.teacherRepo.findOne({
         where: { id, faculty: { id: admin.faculty?.id } },
-        relations: {department: true}
+        relations: { department: true },
       });
       if (teacher) {
         return {
@@ -380,8 +431,6 @@ export class TeachersService {
         relations: { faculty: true },
       });
 
-
-
       if (!teacher) {
         throw new HttpException(
           "Bunday o'qituvchi mavjud emas yoki siz uchun ruxsat berilmagan",
@@ -390,21 +439,27 @@ export class TeachersService {
       }
 
       let department = await this.departmentRepo.findOne({
-        where: { id: body.department_id, faculty: { id: admin.faculty?.id } }
+        where: { id: body.department_id, faculty: { id: admin.faculty?.id } },
       });
-
-      console.log(department);
-
 
       if (!department && body.department_id) {
         throw new HttpException(
-          "Bunday kafedra mavjud emas",
+          'Bunday kafedra mavjud emas',
           HttpStatus.NOT_FOUND,
         );
       }
 
       let checkDuplicate = await this.teacherRepo.findOne({
-        where: { name: body.name, surname: body.surname, department: {id: body.department_id ? body.department_id : teacher.department?.id}, faculty: { id: admin.faculty?.id } },
+        where: {
+          name: body.name,
+          surname: body.surname,
+          department: {
+            id: body.department_id
+              ? body.department_id
+              : teacher.department?.id,
+          },
+          faculty: { id: admin.faculty?.id },
+        },
         relations: { faculty: true },
       });
 
@@ -414,19 +469,38 @@ export class TeachersService {
           HttpStatus.CONFLICT,
         );
       }
-      await this.teacherRepo.update(id, {
-        name: body.name || teacher.name,
-        surname: body.surname || teacher.surname,
-        department: department ? department : teacher.department,
-        updated_at: new Date(),
-      });
+
+      let { nonExistingScienceIds, existingSciences } =
+        await this.checkExistingSciences(body?.sciences);
+      if (nonExistingScienceIds.length > 0) {
+        throw new HttpException(
+          `${nonExistingScienceIds.join(', ')} idlik fanlar mavjud emas`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (existingSciences.length > 0) {
+        teacher.sciences = existingSciences;
+      }
+
+      teacher.name = body.name || teacher.name;
+      teacher.surname = body.surname || teacher.surname;
+      teacher.department = department || teacher.department;
+      teacher.updated_at = new Date();
+
+      await this.teacherRepo.save(teacher);
       return {
         success: true,
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
-        data: await this.teacherRepo.findOne({ where: { id }, relations: {department: true}}),
+        data: await this.teacherRepo.findOne({
+          where: { id },
+          relations: { department: true, sciences: true },
+        }),
       };
     } catch (error) {
+      console.log(error);
+
       throw new HttpException(
         error.message,
         error.status || HttpStatus.BAD_REQUEST,
@@ -449,7 +523,7 @@ export class TeachersService {
       }
 
       let teacher = await this.teacherRepo.findOne({
-        where: { id, faculty: {id: admin.faculty.id}}
+        where: { id, faculty: { id: admin.faculty.id } },
       });
 
       if (teacher) {
@@ -460,10 +534,7 @@ export class TeachersService {
           message: "O'chirildi",
         };
       } else {
-        throw new HttpException(
-          "Bunday o'qituvchi yo'q",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new HttpException("Bunday o'qituvchi yo'q", HttpStatus.NOT_FOUND);
       }
     } catch (error) {
       throw new HttpException(
@@ -471,5 +542,23 @@ export class TeachersService {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  async checkExistingSciences(
+    scienceIds: string[],
+  ): Promise<{ nonExistingScienceIds: string[]; existingSciences: Science[] }> {
+    const nonExistingScienceIds: string[] = [];
+    const existingSciences: Science[] = [];
+    for (const scienceId of scienceIds) {
+      const science = await this.scienceRepo.findOne({
+        where: { id: scienceId },
+      });
+      if (!science) {
+        nonExistingScienceIds.push(scienceId);
+      } else {
+        existingSciences.push(science);
+      }
+    }
+    return { nonExistingScienceIds, existingSciences };
   }
 }
