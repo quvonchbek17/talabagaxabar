@@ -19,7 +19,4 @@ export class Department extends BaseModel {
 
     @OneToMany(type => Teacher, teacher => teacher.department)
     teachers: Teacher[];
-
-    @OneToMany(type => Science, science => science.department)
-    sciences: Science[];
 }

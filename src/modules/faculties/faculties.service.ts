@@ -344,7 +344,7 @@ export class FacultiesService {
         );
       }
       await this.facultyRepo.update(id, {
-        name: body.name,
+        name: body.name || faculty.name,
         updated_at: new Date(),
       });
       return {

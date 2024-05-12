@@ -1,32 +1,32 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { CreateScienceDto } from './dto/create-science.dto';
+import { UpdateScienceDto } from './dto/update-science.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
-import { Direction, Admin } from '@entities';
+import { Admin, Science } from '@entities';
+import { Repository } from 'typeorm';
 import { rolesName } from '@common';
-import { CreateDirectionDto, UpdateDirectionDto } from './dto';
 
 @Injectable()
-export class DirectionsService {
-   constructor(
-    @InjectRepository(Direction)
-    private readonly directionRepo: Repository<Direction>,
+export class SciencesService {
+  constructor(
+    @InjectRepository(Science)
+    private readonly scienceRepo: Repository<Science>,
     @InjectRepository(Admin)
-    private readonly adminRepo: Repository<Admin>
-   ){}
-
-   async create(body: CreateDirectionDto, adminId: string) {
+    private readonly adminRepo: Repository<Admin>,
+  ) {}
+  async create(body: CreateScienceDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true },
       });
-      let checkDuplicate = await this.directionRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty.id } },
+      let checkDuplicate = await this.scienceRepo.findOne({
+        where: { name: body.name, faculty: { id: admin.faculty?.id } },
       });
 
       if (checkDuplicate) {
         throw new HttpException(
-          "Bu yo'nalish avval qo'shilgan",
+          "Bu fan avval qo'shilgan",
           HttpStatus.CONFLICT,
         );
       }
@@ -37,19 +37,16 @@ export class DirectionsService {
         );
       }
 
-      let direction = this.directionRepo.create({
+      let science = this.scienceRepo.create({
         ...body,
         faculty: admin.faculty,
       });
-      await direction.save();
-
-      delete direction.faculty.created_at
-      delete direction.faculty.updated_at
+      await science.save();
       return {
         statusCode: HttpStatus.OK,
-        message: "Yo'nalish saqlandi",
+        message: 'Fan saqlandi',
         success: true,
-        data: direction,
+        data: science,
       };
     } catch (error) {
       throw new HttpException(
@@ -63,17 +60,16 @@ export class DirectionsService {
     try {
       let page = 1
       let limit = 10
-
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let [directions, count] = await this.directionRepo
-        .createQueryBuilder('d')
-        .innerJoin('d.faculty', 'f')
-        .select(['d.id', 'd.name', 'f.id', 'f.name'])
+        let [sciences, count] = await this.scienceRepo
+        .createQueryBuilder('s')
+        .innerJoin('s.faculty', 'f')
+        .select(['s.id', 's.name', 'f.id', 'f.name'])
         .offset((page - 1) * limit)
         .limit(limit)
         .getManyAndCount();
@@ -87,18 +83,18 @@ export class DirectionsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: directions,
+          items: sciences,
         },
       };
       }
 
       if (admin?.faculty) {
-        let [directions, count] = await this.directionRepo
-        .createQueryBuilder('d')
-        .select(['d.id', 'd.name'])
+        let [sciences, count] = await this.scienceRepo
+        .createQueryBuilder('s')
+        .select(['s.id', 's.name'])
         .offset((page - 1) * limit)
         .limit(limit)
-        .where('d.faculty_id = :id', { id: admin.faculty.id })
+        .where('s.faculty_id = :id', { id: admin.faculty?.id })
         .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -109,7 +105,7 @@ export class DirectionsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: directions,
+          items: sciences,
         },
       }
       } else {
@@ -133,11 +129,11 @@ export class DirectionsService {
         relations: { faculty: true, role: true },
       });
 
-      if (admin.role.name === rolesName.super_admin) {
-        let [directions, count] = await this.directionRepo
-          .createQueryBuilder('d')
-          .innerJoin('d.faculty', 'f')
-          .select(['d.id', 'd.name', 'f.id', 'f.name'])
+      if (admin.role?.name === rolesName.super_admin) {
+        let [sciences, count] = await this.scienceRepo
+          .createQueryBuilder('s')
+          .innerJoin('s.faculty', 'f')
+          .select(['s.id', 's.name', 'f.id', 'f.name'])
           .offset((page - 1) * limit)
           .limit(limit)
           .getManyAndCount();
@@ -151,7 +147,7 @@ export class DirectionsService {
             currentCount: limit,
             totalCount: count,
             totalPages: Math.ceil(count / limit),
-            items: directions,
+            items: sciences,
           },
         };
       }
@@ -163,12 +159,12 @@ export class DirectionsService {
         );
       }
 
-      let [directions, count] = await this.directionRepo
-        .createQueryBuilder('d')
-        .select(['d.id', 'd.name'])
+      let [sciences, count] = await this.scienceRepo
+        .createQueryBuilder('s')
+        .select(['s.id', 's.name'])
         .offset((page - 1) * limit)
         .limit(limit)
-        .where('d.faculty_id = :id', { id: admin.faculty.id })
+        .where('s.faculty_id = :id', { id: admin.faculty?.id })
         .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -179,7 +175,7 @@ export class DirectionsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: directions,
+          items: sciences,
         },
       };
     } catch (error) {
@@ -190,12 +186,10 @@ export class DirectionsService {
     }
   }
 
-
   async search(search: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
-
 
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
@@ -203,13 +197,13 @@ export class DirectionsService {
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-      let [directions, count] = await this.directionRepo
-      .createQueryBuilder('d')
-      .innerJoin('d.faculty', 'f')
-      .select(['d.id', 'd.name', 'f.id', 'f.name'])
+      let [sciences, count] = await this.scienceRepo
+      .createQueryBuilder('s')
+      .innerJoin('s.faculty', 'f')
+      .select(['s.id', 's.name', 'f.id', 'f.name'])
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('d.name ILike :search', { search: `%${search}%` })
+      .where('s.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -220,7 +214,7 @@ export class DirectionsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: directions,
+          items: sciences,
         },
       };
       }
@@ -232,13 +226,13 @@ export class DirectionsService {
         );
       }
 
-      let [directions, count] = await this.directionRepo
-      .createQueryBuilder('d')
-      .select(['d.id', 'd.name'])
+      let [sciences, count] = await this.scienceRepo
+      .createQueryBuilder('s')
+      .select(['s.id', 's.name'])
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('d.faculty_id = :id', { id: admin.faculty.id })
-      .andWhere('d.name ILike :search', { search: `%${search}%` })
+      .where('s.faculty_id = :id', { id: admin.faculty.id })
+      .andWhere('s.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -249,9 +243,10 @@ export class DirectionsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: directions,
+          items: sciences,
         },
       };
+
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -268,14 +263,14 @@ export class DirectionsService {
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let direction = await this.directionRepo.findOne({
+        let department = await this.scienceRepo.findOne({
           where: { id },
           relations: { faculty: true },
         });
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: direction,
+          data: department,
         };
       }
 
@@ -285,18 +280,18 @@ export class DirectionsService {
           HttpStatus.FORBIDDEN,
         );
       }
-      let direction = await this.directionRepo.findOne({
-        where: { id, faculty: { id: admin.faculty.id } },
+      let science = await this.scienceRepo.findOne({
+        where: { id, faculty: { id: admin.faculty?.id } },
       });
-      if (direction) {
+      if (science) {
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: direction,
+          data: science,
         };
       } else {
         throw new HttpException(
-          "Sizning fakultetingizda bunday idlik yo'nalish yo'q",
+          "Sizning fakultetingizda bunday idlik fan yo'q",
           HttpStatus.NOT_FOUND,
         );
       }
@@ -308,7 +303,7 @@ export class DirectionsService {
     }
   }
 
-  async update(id: string, body: UpdateDirectionDto, adminId: string) {
+  async update(id: string, body: UpdateScienceDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
@@ -322,38 +317,38 @@ export class DirectionsService {
         );
       }
 
-      let direction = await this.directionRepo.findOne({
-        where: { id, faculty: { id: admin.faculty.id } },
+      let science = await this.scienceRepo.findOne({
+        where: { id, faculty: { id: admin.faculty?.id } },
         relations: { faculty: true },
       });
 
-      if (!direction) {
+      if (!science) {
         throw new HttpException(
-          "Bunday yo'nalish mavjud emas yoki siz uchun ruxsat berilmagan",
+          'Bunday fan mavjud emas yoki siz uchun ruxsat berilmagan',
           HttpStatus.NOT_FOUND,
         );
       }
 
-      let checkDuplicate = await this.directionRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty.id } },
+      let checkDuplicate = await this.scienceRepo.findOne({
+        where: { name: body.name, faculty: { id: admin.faculty?.id } },
         relations: { faculty: true },
       });
 
       if (checkDuplicate) {
         throw new HttpException(
-          "Bu nomlik yo'nalish allaqachon mavjud",
+          'Bu nomlik fan allaqachon mavjud',
           HttpStatus.CONFLICT,
         );
       }
-      await this.directionRepo.update(id, {
-        name: body.name || direction.name,
+      await this.scienceRepo.update(id, {
+        name: body.name || science.name,
         updated_at: new Date(),
       });
       return {
         success: true,
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
-        data: await this.directionRepo.findOne({ where: { id } }),
+        data: await this.scienceRepo.findOne({ where: { id } }),
       };
     } catch (error) {
       throw new HttpException(
@@ -377,12 +372,12 @@ export class DirectionsService {
         );
       }
 
-      let direction = await this.directionRepo.findOne({
+      let science = await this.scienceRepo.findOne({
         where: { id, faculty: {id: admin.faculty.id}}
       });
 
-      if (direction) {
-        await this.directionRepo.remove(direction);
+      if (science) {
+        await this.scienceRepo.remove(science);
         return {
           success: true,
           statusCode: HttpStatus.OK,
@@ -390,7 +385,7 @@ export class DirectionsService {
         };
       } else {
         throw new HttpException(
-          "Bunday yo'nalish yo'q",
+          "Bunday fan yo'q",
           HttpStatus.NOT_FOUND,
         );
       }

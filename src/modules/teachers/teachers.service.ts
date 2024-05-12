@@ -415,8 +415,8 @@ export class TeachersService {
         );
       }
       await this.teacherRepo.update(id, {
-        name: body.name,
-        surname: body.surname,
+        name: body.name || teacher.name,
+        surname: body.surname || teacher.surname,
         department: department ? department : teacher.department,
         updated_at: new Date(),
       });

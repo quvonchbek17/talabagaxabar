@@ -1,19 +1,19 @@
 import { Request } from 'express';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
-import { DepartmentsService } from './departments.service';
-import { CreateDepartmentDto, UpdateDepartmentDto, DepartmentParamsIdDto } from './dto';
-import { HasRole, JwtAuthGuard } from '@guards';
-import { rolesName, SetRoles } from '@common';
+import { SetRoles, rolesName } from '@common';
+import { JwtAuthGuard, HasRole } from '@guards';
+import { SciencesService } from './sciences.service';
+import { CreateScienceDto, UpdateScienceDto, ScienceParamsIdDto } from './dto';
 
-@Controller('departments')
-export class DepartmentsController {
-  constructor(private readonly departmentsService: DepartmentsService) {}
+@Controller('sciences')
+export class SciencesController {
+  constructor(private readonly sciencesService: SciencesService) {}
 
   @SetRoles(rolesName.faculty_lead_admin, rolesName.faculty_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Post("create")
-  async create(@Body() body: CreateDepartmentDto, @Req() req: Request) {
-    return this.departmentsService.create(body, req.user.id);
+  async create(@Body() body: CreateScienceDto, @Req() req: Request) {
+    return  this.sciencesService.create(body, req.user.id);
   }
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
@@ -22,11 +22,11 @@ export class DepartmentsController {
   async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('search') search: string, @Query() allquery: any) {
        try {
         if (search) {
-          return this.departmentsService.search(search, page, limit, req.user.id);
+          return this.sciencesService.search(search, page, limit, req.user.id);
         } else if (page && limit) {
-          return this.departmentsService.pagination(page, limit, req.user.id);
+          return this.sciencesService.pagination(page, limit, req.user.id);
         } else if(Object.keys(allquery).length === 0) {
-          return this.departmentsService.findAll(req.user.id);
+          return this.sciencesService.findAll(req.user.id);
         } else {
           throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
         }
@@ -38,21 +38,21 @@ export class DepartmentsController {
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get(':id')
-  async findOne(@Param() params: DepartmentParamsIdDto, @Req() req: Request) {
-    return this.departmentsService.findOne(params?.id, req.user.id);
+  async findOne(@Param() params: ScienceParamsIdDto, @Req() req: Request) {
+    return this.sciencesService.findOne(params?.id, req.user.id);
   }
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Patch(':id')
-  update(@Param() params: DepartmentParamsIdDto, @Body() body: UpdateDepartmentDto, @Req() req: Request) {
-    return this.departmentsService.update(params?.id, body, req.user.id);
+  update(@Param() params: ScienceParamsIdDto, @Body() body: UpdateScienceDto, @Req() req: Request) {
+    return this.sciencesService.update(params?.id, body, req.user.id);
   }
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Delete(':id')
-  remove(@Param() params: DepartmentParamsIdDto, @Req() req: Request) {
-    return this.departmentsService.remove(params?.id, req.user.id);
+  remove(@Param() params: ScienceParamsIdDto, @Req() req: Request) {
+    return this.sciencesService.remove(params?.id, req.user.id);
   }
 }

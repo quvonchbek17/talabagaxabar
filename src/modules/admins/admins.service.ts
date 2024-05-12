@@ -413,9 +413,9 @@ export class AdminsService {
       }
 
       await this.adminsRepo.update(id, {
-        adminname: body.adminname,
-        password: body.newpassword,
-        fullname: body.fullname,
+        adminname: body.adminname || admin.adminname,
+        password: body.newpassword || admin.password,
+        fullname: body.fullname || admin.fullname,
         img: filename !== '' ? filename : admin.img,
         updated_at: new Date(),
       });
@@ -463,7 +463,7 @@ export class AdminsService {
         }
       }
 
-      if (admin.role?.name === rolesName.university_admin) {
+      if(admin.role?.name === rolesName.university_admin) {
         let deletedAdmin = await this.adminsRepo.findOne({
           where: {
             id: deletedAdminId,

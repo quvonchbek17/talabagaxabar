@@ -66,8 +66,8 @@ export class PermissionsService {
       });
       if (permission) {
         await this.permissionRepo.update(body.id, {
-          path: body.path,
-          desc: body.desc,
+          path: body.path || permission.path,
+          desc: body.desc || permission.desc,
           updated_at: new Date(),
         });
         return {

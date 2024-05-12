@@ -125,7 +125,6 @@ export class DepartmentsService {
     }
   }
 
-
   async pagination(page: number, limit: number, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
@@ -347,7 +346,7 @@ export class DepartmentsService {
         );
       }
       await this.departmentRepo.update(id, {
-        name: body.name,
+        name: body.name || department.name,
         updated_at: new Date(),
       });
       return {
@@ -363,7 +362,6 @@ export class DepartmentsService {
       );
     }
   }
-
 
   async remove(id: string, adminId: string) {
     try {

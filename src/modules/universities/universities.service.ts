@@ -142,7 +142,7 @@ export class UniversitiesService {
         throw new HttpException("Bu nomdagi universitet allaqchon mavjud", HttpStatus.CONFLICT)
       }
       if (university) {
-        await this.universityRepo.update(id, {name: body.name, updated_at: new Date()});
+        await this.universityRepo.update(id, {name: body.name || university.name, updated_at: new Date()});
         return {
           success: true,
           message: 'Yangilandi',
