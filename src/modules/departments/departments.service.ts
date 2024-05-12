@@ -30,7 +30,7 @@ export class DepartmentsService {
           HttpStatus.FORBIDDEN,
         );
       }
-      
+
       let checkDuplicate = await this.departmentRepo.findOne({
         where: { name: body.name, faculty: { id: admin.faculty.id } },
       });
@@ -61,115 +61,36 @@ export class DepartmentsService {
     }
   }
 
-  async findAll(adminId: string) {
-    try {
-      let page = 1
-      let limit = 10
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { faculty: true, role: true },
-      });
-
-      if (admin.role?.name === rolesName.super_admin) {
-        let [departments, count] = await this.departmentRepo
-        .createQueryBuilder('d')
-        .innerJoin('d.faculty', 'f')
-        .select(['d.id', 'd.name', 'f.id', 'f.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
-
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: departments,
-        },
-      };
-      }
-
-      if (admin?.faculty) {
-        let [departments, count] = await this.departmentRepo
-        .createQueryBuilder('d')
-        .select(['d.id', 'd.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('d.faculty_id = :id', { id: admin.faculty.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: departments,
-        },
-      }
-      } else {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
   async pagination(page: number, limit: number, adminId: string) {
     try {
+      page = page ? page : 1;
+      limit = limit ? limit : 10;
+
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
+      let qb = this.departmentRepo.createQueryBuilder('d')
+
       if (admin.role?.name === rolesName.super_admin) {
-        let [departments, count] = await this.departmentRepo
-          .createQueryBuilder('d')
-          .innerJoin('d.faculty', 'f')
-          .select(['d.id', 'd.name', 'f.id', 'f.name'])
-          .offset((page - 1) * limit)
-          .limit(limit)
-          .getManyAndCount();
+        qb.innerJoin('d.faculty', 'f')
+        .select(['d.id', 'd.name', 'f.id', 'f.name'])
+      } else {
+        if (!admin.faculty) {
+          throw new HttpException(
+            "Sizning fakultetingiz yo'q",
+            HttpStatus.FORBIDDEN,
+          );
+        }
 
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            currentPage: page,
-            currentCount: limit,
-            totalCount: count,
-            totalPages: Math.ceil(count / limit),
-            items: departments,
-          },
-        };
+        qb.select(['d.id', 'd.name'])
+        .where('d.faculty_id = :id', { id: admin.faculty.id })
       }
 
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [departments, count] = await this.departmentRepo
-        .createQueryBuilder('d')
-        .select(['d.id', 'd.name'])
+      let [departments, count] = await qb
         .offset((page - 1) * limit)
         .limit(limit)
-        .where('d.faculty_id = :id', { id: admin.faculty.id })
         .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
@@ -201,45 +122,27 @@ export class DepartmentsService {
         relations: { faculty: true, role: true },
       });
 
-
+      let qb = this.departmentRepo.createQueryBuilder('d')
+      .where('d.name ILike :search', { search: `%${search}%` })
 
       if (admin.role?.name === rolesName.super_admin) {
-      let [departments, count] = await this.departmentRepo
-      .createQueryBuilder('d')
-      .innerJoin('d.faculty', 'f')
-      .select(['d.id', 'd.name', 'f.id', 'f.name'])
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .where('d.name ILike :search', { search: `%${search}%` })
-      .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: departments,
-        },
-      };
+        qb.innerJoin('d.faculty', 'f')
+        .select(['d.id', 'd.name', 'f.id', 'f.name'])
+      } else {
+        if (!admin.faculty) {
+          throw new HttpException(
+            "Sizning fakultetingiz yo'q",
+            HttpStatus.FORBIDDEN,
+          );
+        }
+
+        qb.select(['d.id', 'd.name'])
+        .andWhere('d.faculty_id = :id', { id: admin.faculty.id })
       }
 
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [departments, count] = await this.departmentRepo
-      .createQueryBuilder('d')
-      .select(['d.id', 'd.name'])
+      let [departments, count] = await qb
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('d.faculty_id = :id', { id: admin.faculty.id })
-      .andWhere('d.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,

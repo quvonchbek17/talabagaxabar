@@ -26,7 +26,7 @@ export class DepartmentsController {
         } else if (page && limit) {
           return this.departmentsService.pagination(page, limit, req.user.id);
         } else if(Object.keys(allquery).length === 0) {
-          return this.departmentsService.findAll(req.user.id);
+          return this.departmentsService.pagination(0, 0, req.user.id);
         } else {
           throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
         }
