@@ -33,6 +33,7 @@ import {
 } from '@entities';
 import { TeachersModule } from './modules/teachers/teachers.module';
 import { SciencesModule } from './modules/sciences/sciences.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
 @Module({
   imports: [
     JwtModule.register({
@@ -68,7 +69,8 @@ import { SciencesModule } from './modules/sciences/sciences.module';
     FilesModule,
     PermissionsModule,
     TeachersModule,
-    SciencesModule
+    SciencesModule,
+    RoomsModule
   ],
 })
 export class AppModule {}

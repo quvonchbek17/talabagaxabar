@@ -20,6 +20,14 @@ export class DirectionsService {
         where: { id: adminId },
         relations: { faculty: true },
       });
+
+      if (!admin.faculty) {
+        throw new HttpException(
+          "Sizning fakultetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      
       let checkDuplicate = await this.directionRepo.findOne({
         where: { name: body.name, faculty: { id: admin.faculty.id } },
       });
@@ -28,12 +36,6 @@ export class DirectionsService {
         throw new HttpException(
           "Bu yo'nalish avval qo'shilgan",
           HttpStatus.CONFLICT,
-        );
-      }
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
         );
       }
 

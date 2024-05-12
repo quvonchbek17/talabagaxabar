@@ -19,9 +19,9 @@ export class Room extends BaseModel {
 
     @Column({
         name: 'floor',
-        type: 'varchar'
+        type: 'int'
     })
-    floor: string;
+    floor: number;
 
     @ManyToOne(type => Faculty, faculty => faculty.rooms)
     @JoinColumn({name: "faculty_id"})

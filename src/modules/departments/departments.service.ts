@@ -23,6 +23,14 @@ export class DepartmentsService {
         where: { id: adminId },
         relations: { faculty: true },
       });
+
+      if (!admin.faculty) {
+        throw new HttpException(
+          "Sizning fakultetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      
       let checkDuplicate = await this.departmentRepo.findOne({
         where: { name: body.name, faculty: { id: admin.faculty.id } },
       });
@@ -31,12 +39,6 @@ export class DepartmentsService {
         throw new HttpException(
           "Bu kafedra avval qo'shilgan",
           HttpStatus.CONFLICT,
-        );
-      }
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
         );
       }
 

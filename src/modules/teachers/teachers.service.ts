@@ -24,6 +24,14 @@ export class TeachersService {
         where: { id: adminId },
         relations: { faculty: true },
       });
+
+      if (!admin.faculty) {
+        throw new HttpException(
+          "Sizning fakultetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      
       let checkDuplicate = await this.teacherRepo.findOne({
         where: {
           name: body.name,
@@ -37,12 +45,6 @@ export class TeachersService {
         throw new HttpException(
           "Bu o'qituvchi avval qo'shilgan",
           HttpStatus.CONFLICT,
-        );
-      }
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
         );
       }
 

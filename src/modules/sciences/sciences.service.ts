@@ -20,6 +20,14 @@ export class SciencesService {
         where: { id: adminId },
         relations: { faculty: true },
       });
+
+      if (!admin.faculty) {
+        throw new HttpException(
+          "Sizning fakultetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
       let checkDuplicate = await this.scienceRepo.findOne({
         where: { name: body.name, faculty: { id: admin.faculty?.id } },
       });
@@ -28,12 +36,6 @@ export class SciencesService {
         throw new HttpException(
           "Bu fan avval qo'shilgan",
           HttpStatus.CONFLICT,
-        );
-      }
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
         );
       }
 
