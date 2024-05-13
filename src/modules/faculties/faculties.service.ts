@@ -30,7 +30,7 @@ export class FacultiesService {
           HttpStatus.FORBIDDEN,
         );
       }
-      
+
       let checkDuplicate = await this.facultyRepo.findOne({
         where: { name: body.name, university: { id: admin.university.id } },
       });
@@ -61,25 +61,39 @@ export class FacultiesService {
     }
   }
 
-  async findAll(adminId: string) {
+  async get(search: string, page: number, limit: number, adminId: string) {
     try {
-      let page = 1
-      let limit = 10
+      page = page ? page : 1
+      limit = limit ? limit : 10
 
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { university: true, role: true },
       });
 
-      if (admin.role?.name === rolesName.super_admin) {
-        let [faculties, count] = await this.facultyRepo
-        .createQueryBuilder('f')
-        .innerJoin('f.university', 'u')
-        .select(['f.id', 'f.name', 'u.id', 'u.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
+      let qb = this.facultyRepo.createQueryBuilder('f')
+      if(search){
+        qb.where('f.name ILike :search', { search: `%${search}%` })
+      }
 
+      if (admin.role?.name === rolesName.super_admin) {
+        qb.innerJoin('f.university', 'u')
+        .select(['f.id', 'f.name', 'u.id', 'u.name'])
+      } else {
+        if (!admin.university) {
+          throw new HttpException(
+            "Sizning universitetingiz yo'q",
+            HttpStatus.FORBIDDEN,
+          );
+        }
+
+        qb.select(['f.id', 'f.name']).andWhere('f.university_id = :id', { id: admin.university.id })
+      }
+
+      let [faculties, count] = await qb
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
         success: true,
@@ -92,34 +106,6 @@ export class FacultiesService {
           items: faculties,
         },
       };
-      }
-
-      if (admin?.university) {
-        let [faculties, count] = await this.facultyRepo
-        .createQueryBuilder('f')
-        .select(['f.id', 'f.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('f.university_id = :id', { id: admin.university.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: faculties,
-        },
-      }
-      } else {
-        throw new HttpException(
-          "Sizning universitetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -168,138 +154,6 @@ export class FacultiesService {
           HttpStatus.NOT_FOUND,
         );
       }
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async pagination(page: number, limit: number, adminId: string) {
-    try {
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { university: true, role: true },
-      });
-
-      if (admin.role.name === rolesName.super_admin) {
-        let [faculties, count] = await this.facultyRepo
-          .createQueryBuilder('f')
-          .innerJoin('f.university', 'u')
-          .select(['f.id', 'f.name', 'u.id', 'u.name'])
-          .offset((page - 1) * limit)
-          .limit(limit)
-          .getManyAndCount();
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            currentPage: page,
-            currentCount: limit,
-            totalCount: count,
-            totalPages: Math.ceil(count / limit),
-            items: faculties,
-          },
-        };
-      }
-
-      if (!admin.university) {
-        throw new HttpException(
-          "Sizning universitetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [faculties, count] = await this.facultyRepo
-        .createQueryBuilder('f')
-        .select(['f.id', 'f.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('f.university_id = :id', { id: admin.university.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: faculties,
-        },
-      };
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async searchByName(searchedName: string, page: number, limit: number, adminId: string) {
-    try {
-      page = page ? page : 1
-      limit = limit ? limit : 10
-
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { university: true, role: true },
-      });
-
-      if (admin.role?.name === rolesName.super_admin) {
-        let [faculties, count] = await this.facultyRepo
-        .createQueryBuilder('f')
-        .innerJoin('f.university', 'u')
-        .select(['f.id', 'f.name', 'u.id', 'u.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('f.name ILike :searchedName', { searchedName: `%${searchedName}%` })
-        .getManyAndCount();
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            currentPage: page,
-            currentCount: limit,
-            totalCount: count,
-            totalPages: Math.ceil(count / limit),
-            items: faculties,
-          },
-        };
-      }
-
-      if (!admin.university) {
-        throw new HttpException(
-          "Sizning universitetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [faculties, count] = await this.facultyRepo
-      .createQueryBuilder('f')
-      .select(['f.id', 'f.name'])
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .where('f.university_id = :id', { id: admin.university.id })
-      .andWhere('f.name ILike :searchedName', { searchedName: `%${searchedName}%` })
-      .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: faculties,
-        },
-      };
     } catch (error) {
       throw new HttpException(
         error.message,

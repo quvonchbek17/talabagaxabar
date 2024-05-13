@@ -19,14 +19,12 @@ export class RoomsController {
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get()
-  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('capacityto', new DefaultValuePipe(0), ParseIntPipe) capacityTo: number, @Query('capacityfrom', new DefaultValuePipe(0), ParseIntPipe) capacityFrom: number, @Query('floor', new DefaultValuePipe(0), ParseIntPipe) floor: number, @Query('search') search: string, @Query() allquery: any) {
+  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('capacityTo', new DefaultValuePipe(0), ParseIntPipe) capacityTo: number, @Query('capacityFrom', new DefaultValuePipe(0), ParseIntPipe) capacityFrom: number, @Query('floor', new DefaultValuePipe(0), ParseIntPipe) floor: number, @Query('search') search: string, @Query() allquery: any) {
        try {
-        if (search) {
-          return this.roomsService.search(search, capacityTo, capacityFrom, floor, page, limit, req.user.id);
-        } else if (page && limit) {
-          return this.roomsService.pagination(page, limit, req.user.id);
+        if (search || capacityTo || capacityFrom || floor || page || limit) {
+          return this.roomsService.get(search, capacityTo, capacityFrom, floor, page, limit, req.user.id);
         } else if(Object.keys(allquery).length === 0) {
-          return this.roomsService.pagination(0, 0,req.user.id);
+          return this.roomsService.get("", 0, 0, 0, 0, 0, req.user.id);
         } else {
           throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
         }

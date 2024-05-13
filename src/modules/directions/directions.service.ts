@@ -27,7 +27,7 @@ export class DirectionsService {
           HttpStatus.FORBIDDEN,
         );
       }
-      
+
       let checkDuplicate = await this.directionRepo.findOne({
         where: { name: body.name, faculty: { id: admin.faculty.id } },
       });
@@ -61,186 +61,38 @@ export class DirectionsService {
     }
   }
 
-  async findAll(adminId: string) {
-    try {
-      let page = 1
-      let limit = 10
-
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { faculty: true, role: true },
-      });
-
-      if (admin.role?.name === rolesName.super_admin) {
-        let [directions, count] = await this.directionRepo
-        .createQueryBuilder('d')
-        .innerJoin('d.faculty', 'f')
-        .select(['d.id', 'd.name', 'f.id', 'f.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
-
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: directions,
-        },
-      };
-      }
-
-      if (admin?.faculty) {
-        let [directions, count] = await this.directionRepo
-        .createQueryBuilder('d')
-        .select(['d.id', 'd.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('d.faculty_id = :id', { id: admin.faculty.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: directions,
-        },
-      }
-      } else {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async pagination(page: number, limit: number, adminId: string) {
-    try {
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { faculty: true, role: true },
-      });
-
-      if (admin.role.name === rolesName.super_admin) {
-        let [directions, count] = await this.directionRepo
-          .createQueryBuilder('d')
-          .innerJoin('d.faculty', 'f')
-          .select(['d.id', 'd.name', 'f.id', 'f.name'])
-          .offset((page - 1) * limit)
-          .limit(limit)
-          .getManyAndCount();
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            currentPage: page,
-            currentCount: limit,
-            totalCount: count,
-            totalPages: Math.ceil(count / limit),
-            items: directions,
-          },
-        };
-      }
-
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [directions, count] = await this.directionRepo
-        .createQueryBuilder('d')
-        .select(['d.id', 'd.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('d.faculty_id = :id', { id: admin.faculty.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: directions,
-        },
-      };
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-
-  async search(search: string, page: number, limit: number, adminId: string) {
+  async get(search: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
 
-
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
+      let qb = this.directionRepo.createQueryBuilder('d')
+      if(search){
+        qb.where('d.name ILike :search', { search: `%${search}%` })
+      }
+
       if (admin.role?.name === rolesName.super_admin) {
-      let [directions, count] = await this.directionRepo
-      .createQueryBuilder('d')
-      .innerJoin('d.faculty', 'f')
+       qb.innerJoin('d.faculty', 'f')
       .select(['d.id', 'd.name', 'f.id', 'f.name'])
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .where('d.name ILike :search', { search: `%${search}%` })
-      .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: directions,
-        },
-      };
+      } else {
+        if (!admin.faculty) {
+          throw new HttpException(
+            "Sizning fakultetingiz yo'q",
+            HttpStatus.FORBIDDEN,
+          );
+        }
+
+        qb.select(['d.id', 'd.name']).andWhere('d.faculty_id = :id', { id: admin.faculty?.id })
       }
 
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [directions, count] = await this.directionRepo
-      .createQueryBuilder('d')
-      .select(['d.id', 'd.name'])
+      let [directions, count] = await qb
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('d.faculty_id = :id', { id: admin.faculty.id })
-      .andWhere('d.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,

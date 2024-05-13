@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Db, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin, University, AdminRole, Permission, Faculty } from '@entities';
 import { rolesName } from '@common';
@@ -287,40 +287,31 @@ export class AdminsService {
     }
   }
 
-  async findAllAdmins(adminId: string) {
+  async get(search: string, page:number, limit: number, adminId: string) {
     try {
+      page = page ? page : 1;
+      limit = limit ? limit : 10;
+
       let admin = await this.adminsRepo.findOne({
         where: { id: adminId },
         relations: { role: true, university: true, faculty: true },
       });
 
-      if (admin.role?.name === rolesName.super_admin) {
-        let [admins, count] = await this.adminsRepo
-          .createQueryBuilder('a')
-          .innerJoin('a.role', 'r')
-          .innerJoin('a.university', 'u')
-          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'u.id', 'u.name'])
-          .where('r.name = :role', { role: rolesName.university_admin })
-          .getManyAndCount();
+      let qb = this.adminsRepo.createQueryBuilder('a').innerJoin('a.role', 'r')
 
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            totalCount: count,
-            items: admins,
-          },
-        };
+      qb.where('r.name NOT IN (:...roleNames)', { roleNames: [rolesName.developer, rolesName.super_admin] })
+
+      if (admin.role?.name === rolesName.super_admin) {
+          qb.leftJoinAndSelect('a.university', 'u')
+          qb.leftJoinAndSelect('a.faculty', 'f')
+          qb.leftJoinAndSelect('f.university', 'fu')
+          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'r.name', 'u.id', 'u.name', 'f.id', 'f.name', 'fu.id', 'fu.name'])
       }
 
       if (admin.role?.name === rolesName.university_admin) {
-        let [admins, count] = await this.adminsRepo
-          .createQueryBuilder('a')
-          .innerJoin('a.role', 'r')
-          .innerJoin('a.faculty', 'f')
+          qb.innerJoin('a.faculty', 'f')
           .innerJoin('f.university', 'u')
-          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'f.id', 'f.name'])
+          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'r.name', 'f.id', 'f.name'])
           .where('(r.name = :role1 OR r.name = :role2)', {
             role1: rolesName.faculty_admin,
             role2: rolesName.faculty_lead_admin,
@@ -328,42 +319,43 @@ export class AdminsService {
           .andWhere('u.id = :universityId', {
             universityId: admin.university?.id,
           })
-          .getManyAndCount();
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            totalCount: count,
-            items: admins,
-          },
-        };
       }
 
       if (admin.role?.name === rolesName.faculty_lead_admin) {
-        let [admins, count] = await this.adminsRepo
-          .createQueryBuilder('a')
-          .innerJoin('a.role', 'r')
-          .innerJoin('a.faculty', 'f')
+          qb.innerJoin('a.faculty', 'f')
           .innerJoin('f.university', 'u')
-          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'f.id', 'f.name'])
+          .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'r.name', 'f.id', 'f.name'])
           .where('r.name = :role', { role: rolesName.faculty_admin })
           .andWhere('f.id = :facultyId', { facultyId: admin.faculty?.id })
-          .getManyAndCount();
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            totalCount: count,
-            items: admins,
-          },
-        };
-      } else {
-        throw new HttpException('Ruxsatga ega emassiz', HttpStatus.FORBIDDEN);
       }
+
+      if(search){
+        qb.where('a.fullname ILike :search OR a.adminname ILike :search OR u.name ILike :search OR f.name ILike :search OR r.name ILike :search', {
+          search: `%${search}%`,
+        })
+      }
+
+      if(!(admin.role?.name === rolesName.faculty_lead_admin || admin.role?.name === rolesName.university_admin ||admin.role?.name === rolesName.super_admin)){
+          throw new HttpException('Ruxsatga ega emassiz', HttpStatus.FORBIDDEN);
+      }
+
+      let [admins, count] = await qb
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getManyAndCount();
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: count,
+          totalPages: Math.ceil(count / limit),
+          items: admins,
+        },
+      };
+
     } catch (error) {
       throw new HttpException(
         error.message,

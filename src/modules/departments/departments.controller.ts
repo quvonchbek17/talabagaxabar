@@ -21,12 +21,10 @@ export class DepartmentsController {
   @Get()
   async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('search') search: string, @Query() allquery: any) {
        try {
-        if (search) {
-          return this.departmentsService.search(search, page, limit, req.user.id);
-        } else if (page && limit) {
-          return this.departmentsService.pagination(page, limit, req.user.id);
+        if (search || page || limit) {
+          return this.departmentsService.get(search, page, limit, req.user.id);
         } else if(Object.keys(allquery).length === 0) {
-          return this.departmentsService.pagination(0, 0, req.user.id);
+          return this.departmentsService.get("",0, 0, req.user.id);
         } else {
           throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
         }

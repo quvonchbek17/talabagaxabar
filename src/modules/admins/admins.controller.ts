@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseInterceptors, UploadedFile, DefaultValuePipe, Query, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
 import {FileInterceptor} from "@nestjs/platform-express"
 import { AdminsService } from './admins.service';
 import { JwtAuthGuard, HasRole, CheckPermission } from '@guards';
@@ -31,12 +31,22 @@ export class AdminsController {
     return this.adminsService.createAdmin(req.user.id, body);
   }
 
-  @SetRoles(rolesName.super_admin, rolesName.university_admin, rolesName.faculty_lead_admin)
+  @SetRoles(rolesName.faculty_lead_admin, rolesName.university_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get()
-  getAllAdmins(@Req() req: Request) {
-    return this.adminsService.findAllAdmins(req.user.id);
-  }
+  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('search') search: string, @Query() allquery: any) {
+    try {
+     if (search || page || limit) {
+       return this.adminsService.get(search, page, limit, req.user.id);
+     } else if(Object.keys(allquery).length === 0) {
+       return this.adminsService.get("", 0, 0, req.user.id);
+     } else {
+       throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
+     }
+    } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+    }
+}
 
 
   @UseGuards(JwtAuthGuard)

@@ -35,69 +35,22 @@ export class UniversitiesService {
       }
   }
 
-  async findAll() {
-    try {
-      let page = 1
-      let limit = 10
-      let [universities, count] = await this.universityRepo
-      .createQueryBuilder('u')
-      .select(['u.id', 'u.name'])
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .getManyAndCount();
 
-    return {
-      statusCode: HttpStatus.OK,
-      success: true,
-      message: 'success',
-      data: {
-        currentPage: page,
-        currentCount: limit,
-        totalCount: count,
-        totalPages: Math.ceil(count / limit),
-        items: universities,
-      },
-    };
-    } catch (error) {
-        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
-    }
-  }
-
-  async pagination(page: number, limit: number) {
-    try {
-      let [universities, count] = await this.universityRepo
-        .createQueryBuilder("u")
-        .select(["u.id", "u.name"])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: "success",
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: universities
-        }
-      };
-    } catch (error) {
-      throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  async searchByName(searchedName: string, page: number, limit: number){
+  async get(search: string, page: number, limit: number){
      try {
       page = page ? page : 1
       limit = limit ? limit : 10
-      let [universities, count] = await this.universityRepo
-      .createQueryBuilder('u')
+
+      let qb = this.universityRepo.createQueryBuilder('u')
+      
+      if(search){
+        qb.where('u.name ILike :search', { search: `%${search}%` })
+      }
+
+      let [universities, count] = await qb
       .select(['u.id', 'u.name'])
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('u.name ILike :searchedName', { searchedName: `%${searchedName}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,

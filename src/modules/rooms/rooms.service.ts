@@ -62,66 +62,7 @@ export class RoomsService {
     }
   }
 
-  async pagination(page: number, limit: number, adminId: string) {
-    try {
-      page = page ? page : 1;
-      limit = limit ? limit : 10;
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { faculty: true, role: true },
-      });
-
-      let qb = this.roomRepo.createQueryBuilder('r');
-
-      if (admin.role?.name === rolesName.super_admin) {
-        qb.innerJoin('r.faculty', 'f').select([
-          'r.id',
-          'r.name',
-          'r.capacity',
-          'r.floor',
-          'f.id',
-          'f.name',
-        ]);
-      } else {
-        if (!admin.faculty) {
-          throw new HttpException(
-            "Sizning fakultetingiz yo'q",
-            HttpStatus.FORBIDDEN,
-          );
-        }
-
-        qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor']).where(
-          'r.faculty_id = :id',
-          { id: admin.faculty?.id },
-        );
-      }
-
-      let [rooms, count] = await qb
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
-
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: rooms,
-        },
-      };
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async search(
+  async get(
     search: string,
     capacityTo: number,
     capacityFrom: number,
@@ -140,13 +81,17 @@ export class RoomsService {
       });
 
       let qb = this.roomRepo.createQueryBuilder('r');
+      
+      if(search){
+        qb.where('r.name ILike :search', {
+          search: `%${search}%`,
+        });
+      }
 
       if (admin.role?.name === rolesName.super_admin) {
         qb.innerJoin('r.faculty', 'f')
           .select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
-          .where('r.name ILike :search', {
-            search: `%${search}%`,
-          });
+
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -155,8 +100,7 @@ export class RoomsService {
           );
         }
         qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor'])
-          .where('r.faculty_id = :id', { id: admin.faculty?.id })
-          .andWhere('r.name ILike :search', { search: `%${search}%` });
+          .andWhere('r.faculty_id = :id', { id: admin.faculty?.id })
       }
 
       if (floor) {

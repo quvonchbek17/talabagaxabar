@@ -43,12 +43,10 @@ export class UniversitiesController {
     @Query() allquery: any,
   ) {
     try {
-      if (search) {
-        return this.universitiesService.searchByName(search, page, limit);
-      } else if (page && limit) {
-        return this.universitiesService.pagination(page, limit);
+      if (search || page || limit) {
+        return this.universitiesService.get(search, page, limit);
       } else if (Object.keys(allquery).length === 0) {
-        return this.universitiesService.findAll();
+        return this.universitiesService.get("", 0, 0);
       } else {
         throw new HttpException(
           "Bunday so'rov mavjud emas",

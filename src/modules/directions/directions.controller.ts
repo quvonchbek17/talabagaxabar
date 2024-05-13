@@ -50,17 +50,15 @@ export class DirectionsController {
     @Query() allquery: any,
   ) {
     try {
-      if (search) {
-        return this.directionsService.search(
+      if (search || page || limit) {
+        return this.directionsService.get(
           search,
           page,
           limit,
           req.user.id,
         );
-      } else if (page && limit) {
-        return this.directionsService.pagination(page, limit, req.user.id);
       } else if (Object.keys(allquery).length === 0) {
-        return this.directionsService.findAll(req.user.id);
+        return this.directionsService.get("", 0, 0, req.user.id);
       } else {
         throw new HttpException(
           "Bunday so'rov mavjud emas",

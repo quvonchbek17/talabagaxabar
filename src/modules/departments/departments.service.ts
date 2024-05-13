@@ -112,7 +112,7 @@ export class DepartmentsService {
     }
   }
 
-  async search(search: string, page: number, limit: number, adminId: string) {
+  async get(search: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
@@ -123,7 +123,9 @@ export class DepartmentsService {
       });
 
       let qb = this.departmentRepo.createQueryBuilder('d')
-      .where('d.name ILike :search', { search: `%${search}%` })
+      if(search){
+        qb.where('d.name ILike :search', { search: `%${search}%` })
+      }
 
       if (admin.role?.name === rolesName.super_admin) {
         qb.innerJoin('d.faculty', 'f')
@@ -135,7 +137,7 @@ export class DepartmentsService {
             HttpStatus.FORBIDDEN,
           );
         }
-
+  
         qb.select(['d.id', 'd.name'])
         .andWhere('d.faculty_id = :id', { id: admin.faculty.id })
       }

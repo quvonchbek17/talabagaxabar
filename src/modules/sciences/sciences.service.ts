@@ -58,137 +58,7 @@ export class SciencesService {
     }
   }
 
-  async findAll(adminId: string) {
-    try {
-      let page = 1
-      let limit = 10
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { faculty: true, role: true },
-      });
-
-      if (admin.role?.name === rolesName.super_admin) {
-        let [sciences, count] = await this.scienceRepo
-        .createQueryBuilder('s')
-        .innerJoin('s.faculty', 'f')
-        .select(['s.id', 's.name', 'f.id', 'f.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .getManyAndCount();
-
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: sciences,
-        },
-      };
-      }
-
-      if (admin?.faculty) {
-        let [sciences, count] = await this.scienceRepo
-        .createQueryBuilder('s')
-        .select(['s.id', 's.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('s.faculty_id = :id', { id: admin.faculty?.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: sciences,
-        },
-      }
-      } else {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async pagination(page: number, limit: number, adminId: string) {
-    try {
-      let admin = await this.adminRepo.findOne({
-        where: { id: adminId },
-        relations: { faculty: true, role: true },
-      });
-
-      if (admin.role?.name === rolesName.super_admin) {
-        let [sciences, count] = await this.scienceRepo
-          .createQueryBuilder('s')
-          .innerJoin('s.faculty', 'f')
-          .select(['s.id', 's.name', 'f.id', 'f.name'])
-          .offset((page - 1) * limit)
-          .limit(limit)
-          .getManyAndCount();
-
-        return {
-          statusCode: HttpStatus.OK,
-          success: true,
-          message: 'success',
-          data: {
-            currentPage: page,
-            currentCount: limit,
-            totalCount: count,
-            totalPages: Math.ceil(count / limit),
-            items: sciences,
-          },
-        };
-      }
-
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [sciences, count] = await this.scienceRepo
-        .createQueryBuilder('s')
-        .select(['s.id', 's.name'])
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .where('s.faculty_id = :id', { id: admin.faculty?.id })
-        .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: sciences,
-        },
-      };
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async search(search: string, page: number, limit: number, adminId: string) {
+  async get(search: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
@@ -198,43 +68,29 @@ export class SciencesService {
         relations: { faculty: true, role: true },
       });
 
+      let qb = this.scienceRepo.createQueryBuilder('s')
+
+      if(search){
+        qb.where('s.name ILike :search', { search: `%${search}%` })
+      }
+
       if (admin.role?.name === rolesName.super_admin) {
-      let [sciences, count] = await this.scienceRepo
-      .createQueryBuilder('s')
-      .innerJoin('s.faculty', 'f')
+      qb.innerJoin('s.faculty', 'f')
       .select(['s.id', 's.name', 'f.id', 'f.name'])
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .where('s.name ILike :search', { search: `%${search}%` })
-      .getManyAndCount();
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: count,
-          totalPages: Math.ceil(count / limit),
-          items: sciences,
-        },
-      };
+      } else {
+        if (!admin.faculty) {
+          throw new HttpException(
+            "Sizning fakultetingiz yo'q",
+            HttpStatus.FORBIDDEN,
+          );
+        }
+
+        qb.select(['s.id', 's.name']).andWhere('s.faculty_id = :id', { id: admin.faculty?.id })
       }
 
-      if (!admin.faculty) {
-        throw new HttpException(
-          "Sizning fakultetingiz yo'q",
-          HttpStatus.FORBIDDEN,
-        );
-      }
-
-      let [sciences, count] = await this.scienceRepo
-      .createQueryBuilder('s')
-      .select(['s.id', 's.name'])
+      let [sciences, count] = await qb
       .offset((page - 1) * limit)
       .limit(limit)
-      .where('s.faculty_id = :id', { id: admin.faculty.id })
-      .andWhere('s.name ILike :search', { search: `%${search}%` })
       .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
