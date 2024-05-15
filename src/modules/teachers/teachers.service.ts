@@ -168,7 +168,7 @@ export class TeachersService {
       if (admin.role?.name === rolesName.super_admin) {
         let teacher = await this.teacherRepo.findOne({
           where: { id },
-          relations: { department: true, faculty: true },
+          relations: { department: true, faculty: true, sciences: true },
         });
         return {
           statusCode: HttpStatus.OK,
@@ -185,7 +185,7 @@ export class TeachersService {
       }
       let teacher = await this.teacherRepo.findOne({
         where: { id, faculty: { id: admin.faculty?.id } },
-        relations: { department: true },
+        relations: { department: true, sciences: true },
       });
       if (teacher) {
         return {
