@@ -81,7 +81,7 @@ export class RoomsService {
       });
 
       let qb = this.roomRepo.createQueryBuilder('r');
-      
+
       if(search){
         qb.where('r.name ILike :search', {
           search: `%${search}%`,
@@ -215,10 +215,12 @@ export class RoomsService {
         );
       }
 
-      let checkDuplicate = await this.roomRepo.findOne({
-        where: { name: body.name, capacity: body.capacity, floor: body.floor, faculty: { id: admin.faculty?.id } },
-        relations: { faculty: true },
-      });
+
+      let checkDuplicate = await this.roomRepo.createQueryBuilder('r')
+      .innerJoin('r.faculty', 'f')
+      .where('r.id != :roomId AND r.name = :name AND r.capacity = :capacity AND r.floor = :floor AND f.id = :facultyId',
+       {roomId: room.id ,name: body.name, capacity: body.capacity, floor: body.floor, facultyId: admin.faculty?.id })
+      .getOne()
 
       if (checkDuplicate) {
         throw new HttpException(

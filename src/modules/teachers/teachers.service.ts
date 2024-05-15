@@ -3,7 +3,7 @@ import { CreateTeacherDto } from './dto/create-teacher.dto';
 import { UpdateTeacherDto } from './dto/update-teacher.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin, Department, Science, Teacher } from '@entities';
-import { ILike, Repository } from 'typeorm';
+import { ILike, Not, Repository } from 'typeorm';
 import { rolesName } from '@common';
 
 @Injectable()
@@ -223,7 +223,7 @@ export class TeachersService {
 
       let teacher = await this.teacherRepo.findOne({
         where: { id, faculty: { id: admin.faculty?.id } },
-        relations: { faculty: true },
+        relations: { faculty: true, department: true },
       });
 
       if (!teacher) {
@@ -244,21 +244,14 @@ export class TeachersService {
         );
       }
 
-      let checkDuplicate = await this.teacherRepo.findOne({
-        where: {
-          name: body.name,
-          surname: body.surname,
-          department: {
-            id: body.department_id
-              ? body.department_id
-              : teacher.department?.id,
-          },
-          faculty: { id: admin.faculty?.id },
-        },
-        relations: { faculty: true },
-      });
+      let checkDuplicate = await this.teacherRepo.createQueryBuilder('t')
+      .innerJoin('t.department', 'd')
+      .innerJoin('t.faculty', 'f')
+      .where('t.id != :teacherId AND t.name = :name AND t.surname = :surname AND d.id = :departmentId AND f.id = :facultyId',
+       {teacherId: teacher.id ,name: body.name, surname: body.surname, departmentId: body.department_id ? body.department_id : teacher.department?.id, facultyId: admin.faculty?.id })
+      .getOne()
 
-      if (checkDuplicate && body.name && body.surname) {
+      if (checkDuplicate) {
         throw new HttpException(
           "Bu o'qituvchi allaqachon mavjud",
           HttpStatus.CONFLICT,
