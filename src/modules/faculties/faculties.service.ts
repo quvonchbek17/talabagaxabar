@@ -188,10 +188,11 @@ export class FacultiesService {
         );
       }
 
-      let checkDuplicate = await this.facultyRepo.findOne({
-        where: { name: body.name, university: { id: admin.university.id } },
-        relations: { university: true },
-      });
+      let checkDuplicate = await this.facultyRepo.createQueryBuilder('f')
+      .innerJoin('f.university', 'u')
+      .where('f.id != :facultyId AND f.name = :name AND u.id = :universityId',
+       {facultyId: faculty.id, name: body.name, universityId: admin.university?.id })
+      .getOne()
 
       if (checkDuplicate) {
         throw new HttpException(

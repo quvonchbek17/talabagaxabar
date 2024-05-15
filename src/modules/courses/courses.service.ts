@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Admin, Course } from '@entities';
 import { CreateCourseDto, UpdateCourseDto } from './dto';
 import { rolesName } from '@common';
@@ -187,10 +187,11 @@ export class CoursesService {
         );
       }
 
-      let checkDuplicate = await this.courseRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty.id } },
-        relations: { faculty: true },
-      });
+      let checkDuplicate = await this.courseRepo.createQueryBuilder('c')
+      .innerJoin('c.faculty', 'f')
+      .where('c.id != :courseId AND c.name = :name AND f.id = :facultyId',
+       {courseId: course.id, name: body.name, facultyId: admin.faculty?.id })
+      .getOne()
 
       if (checkDuplicate) {
         throw new HttpException(

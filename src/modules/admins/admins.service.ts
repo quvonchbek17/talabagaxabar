@@ -394,6 +394,15 @@ export class AdminsService {
         where: { id },
       });
 
+      let checkDuplicate = await this.adminsRepo.createQueryBuilder('a')
+      .where('a.id != :adminId AND a.adminname = :adminname ',
+       {adminId: admin.id, adminname: body.adminname})
+      .getOne()
+
+      if(checkDuplicate){
+         throw new HttpException("Bu adminname band", HttpStatus.CONFLICT)
+      }
+
       if (admin.password !== body.oldpassword) {
         throw new HttpException('Oldingi parol xato !', HttpStatus.BAD_REQUEST);
       }

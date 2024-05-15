@@ -42,7 +42,7 @@ export class UniversitiesService {
       limit = limit ? limit : 10
 
       let qb = this.universityRepo.createQueryBuilder('u')
-      
+
       if(search){
         qb.where('u.name ILike :search', { search: `%${search}%` })
       }
@@ -89,10 +89,13 @@ export class UniversitiesService {
   async update(id: string, body: UpdateUniversityDto) {
     try {
       let university = await this.universityRepo.findOne({ where: { id } });
-      let checkDuplicate = await this.universityRepo.findOne({ where: { name: body.name } });
+      let checkDuplicate = await this.universityRepo.createQueryBuilder('u')
+      .where('u.id != :universityId AND u.name = :name',
+       {universityId: university.id, name: body.name })
+      .getOne()
 
       if(checkDuplicate){
-        throw new HttpException("Bu nomdagi universitet allaqchon mavjud", HttpStatus.CONFLICT)
+        throw new HttpException("Bu nomdagi universitet allaqachon mavjud", HttpStatus.CONFLICT)
       }
       if (university) {
         await this.universityRepo.update(id, {name: body.name || university.name, updated_at: new Date()});

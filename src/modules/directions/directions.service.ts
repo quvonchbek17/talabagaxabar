@@ -188,10 +188,11 @@ export class DirectionsService {
         );
       }
 
-      let checkDuplicate = await this.directionRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty.id } },
-        relations: { faculty: true },
-      });
+      let checkDuplicate = await this.directionRepo.createQueryBuilder('d')
+      .innerJoin('d.faculty', 'f')
+      .where('d.id != :directionId AND d.name = :name AND f.id = :facultyId',
+       {directionId: direction.id, name: body.name, facultyId: admin.faculty?.id })
+      .getOne()
 
       if (checkDuplicate) {
         throw new HttpException(

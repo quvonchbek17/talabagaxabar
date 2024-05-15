@@ -187,10 +187,11 @@ export class SciencesService {
         );
       }
 
-      let checkDuplicate = await this.scienceRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty?.id } },
-        relations: { faculty: true },
-      });
+      let checkDuplicate = await this.scienceRepo.createQueryBuilder('s')
+      .innerJoin('s.faculty', 'f')
+      .where('s.id != :scienceId AND s.name = :name AND f.id = :facultyId',
+       {scienceId: science.id, name: body.name, facultyId: admin.faculty?.id })
+      .getOne()
 
       if (checkDuplicate) {
         throw new HttpException(

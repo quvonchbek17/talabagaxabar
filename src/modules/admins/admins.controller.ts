@@ -60,7 +60,7 @@ export class AdminsController {
   @Patch('profile/update')
   @UseInterceptors(FileInterceptor("img"))
   update(@Req() req: Request,@Body() body: UpdateAdminProfileDto, @UploadedFile() file: Express.Multer.File) {
-    return this.adminsService.update(req.user.id, body, file);
+    return this.adminsService.update(req.user?.id, body, file);
   }
 
   @SetRoles(rolesName.super_admin, rolesName.faculty_lead_admin, rolesName.university_admin)
