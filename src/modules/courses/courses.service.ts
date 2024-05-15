@@ -1,23 +1,20 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {  ILike, Repository } from 'typeorm';
-import { Department, Admin } from '@entities';
+import { Repository } from 'typeorm';
+import { Admin, Course } from '@entities';
+import { CreateCourseDto, UpdateCourseDto } from './dto';
 import { rolesName } from '@common';
-import { CreateDepartmentDto, UpdateDepartmentDto } from './dto';
 
 @Injectable()
-export class DepartmentsService {
+export class CoursesService {
   constructor(
-    @InjectRepository(Department)
-    private readonly departmentRepo: Repository<Department>,
+    @InjectRepository(Course)
+    private readonly courseRepo: Repository<Course>,
     @InjectRepository(Admin)
     private readonly adminRepo: Repository<Admin>,
   ) {}
-  async create(body: CreateDepartmentDto, adminId: string) {
+
+  async create(body: CreateCourseDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
@@ -31,27 +28,27 @@ export class DepartmentsService {
         );
       }
 
-      let checkDuplicate = await this.departmentRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty.id } },
+      let checkDuplicate = await this.courseRepo.findOne({
+        where: { name: body.name, faculty: { id: admin.faculty?.id } },
       });
 
       if (checkDuplicate) {
         throw new HttpException(
-          "Bu kafedra avval qo'shilgan",
+          "Bu kurs avval qo'shilgan",
           HttpStatus.CONFLICT,
         );
       }
 
-      let department = this.departmentRepo.create({
+      let course = this.courseRepo.create({
         ...body,
         faculty: admin.faculty,
       });
-      await department.save();
+      await course.save();
       return {
         statusCode: HttpStatus.OK,
-        message: 'Kafedra saqlandi',
+        message: 'Kurs saqlandi',
         success: true,
-        data: department,
+        data: course,
       };
     } catch (error) {
       throw new HttpException(
@@ -71,14 +68,14 @@ export class DepartmentsService {
         relations: { faculty: true, role: true },
       });
 
-      let qb = this.departmentRepo.createQueryBuilder('d')
+      let qb = this.courseRepo.createQueryBuilder('c')
       if(search){
-        qb.where('d.name ILike :search', { search: `%${search}%` })
+        qb.where('c.name ILike :search', { search: `%${search}%` })
       }
 
       if (admin.role?.name === rolesName.super_admin) {
-        qb.innerJoin('d.faculty', 'f')
-        .select(['d.id', 'd.name', 'f.id', 'f.name'])
+        qb.innerJoin('c.faculty', 'f')
+        .select(['c.id', 'c.name', 'f.id', 'f.name'])
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -87,11 +84,11 @@ export class DepartmentsService {
           );
         }
 
-        qb.select(['d.id', 'd.name'])
-        .andWhere('d.faculty_id = :id', { id: admin.faculty.id })
+        qb.select(['c.id', 'c.name'])
+        .andWhere('c.faculty_id = :id', { id: admin.faculty.id })
       }
 
-      let [departments, count] = await qb
+      let [courses, count] = await qb
       .offset((page - 1) * limit)
       .limit(limit)
       .getManyAndCount();
@@ -104,7 +101,7 @@ export class DepartmentsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: departments,
+          items: courses,
         },
       };
 
@@ -124,14 +121,14 @@ export class DepartmentsService {
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let department = await this.departmentRepo.findOne({
+        let course = await this.courseRepo.findOne({
           where: { id },
           relations: { faculty: true },
         });
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: department,
+          data: course,
         };
       }
 
@@ -141,18 +138,18 @@ export class DepartmentsService {
           HttpStatus.FORBIDDEN,
         );
       }
-      let department = await this.departmentRepo.findOne({
+      let course = await this.courseRepo.findOne({
         where: { id, faculty: { id: admin.faculty.id } },
       });
-      if (department) {
+      if (course) {
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: department,
+          data: course,
         };
       } else {
         throw new HttpException(
-          "Sizning fakultetingizda bunday idlik kafedra yo'q",
+          "Sizning fakultetingizda bunday idlik kurs yo'q",
           HttpStatus.NOT_FOUND,
         );
       }
@@ -164,7 +161,7 @@ export class DepartmentsService {
     }
   }
 
-  async update(id: string, body: UpdateDepartmentDto, adminId: string) {
+  async update(id: string, body: UpdateCourseDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
@@ -178,38 +175,38 @@ export class DepartmentsService {
         );
       }
 
-      let department = await this.departmentRepo.findOne({
-        where: { id, faculty: { id: admin.faculty.id } },
+      let course = await this.courseRepo.findOne({
+        where: { id, faculty: { id: admin.faculty?.id } },
         relations: { faculty: true },
       });
 
-      if (!department) {
+      if (!course) {
         throw new HttpException(
-          'Bunday kafedra mavjud emas yoki siz uchun ruxsat berilmagan',
+          'Bunday kurs mavjud emas yoki siz uchun ruxsat berilmagan',
           HttpStatus.NOT_FOUND,
         );
       }
 
-      let checkDuplicate = await this.departmentRepo.findOne({
+      let checkDuplicate = await this.courseRepo.findOne({
         where: { name: body.name, faculty: { id: admin.faculty.id } },
         relations: { faculty: true },
       });
 
       if (checkDuplicate) {
         throw new HttpException(
-          'Bu nomlik kafedra allaqachon mavjud',
+          'Bu nomlik kurs allaqachon mavjud',
           HttpStatus.CONFLICT,
         );
       }
-      await this.departmentRepo.update(id, {
-        name: body.name || department.name,
+      await this.courseRepo.update(id, {
+        name: body.name || course.name,
         updated_at: new Date(),
       });
       return {
         success: true,
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
-        data: await this.departmentRepo.findOne({ where: { id } }),
+        data: await this.courseRepo.findOne({ where: { id } }),
       };
     } catch (error) {
       throw new HttpException(
@@ -233,12 +230,12 @@ export class DepartmentsService {
         );
       }
 
-      let department = await this.departmentRepo.findOne({
-        where: { id, faculty: {id: admin.faculty.id}}
+      let course = await this.courseRepo.findOne({
+        where: { id, faculty: {id: admin.faculty?.id}}
       });
 
-      if (department) {
-        await this.departmentRepo.remove(department);
+      if (course) {
+        await this.courseRepo.remove(course);
         return {
           success: true,
           statusCode: HttpStatus.OK,
@@ -246,7 +243,7 @@ export class DepartmentsService {
         };
       } else {
         throw new HttpException(
-          "Bunday kafedra yo'q",
+          "Bunday kurs yo'q",
           HttpStatus.NOT_FOUND,
         );
       }
