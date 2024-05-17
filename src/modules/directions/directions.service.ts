@@ -73,7 +73,7 @@ export class DirectionsService {
 
       let qb = this.directionRepo.createQueryBuilder('d')
       if(search){
-        qb.where('d.name ILike :search', { search: `%${search}%` })
+        qb.andWhere('d.name ILike :search', { search: `%${search}%` })
       }
 
       if (admin.role?.name === rolesName.super_admin) {
@@ -81,7 +81,7 @@ export class DirectionsService {
       .select(['d.id', 'd.name', 'f.id', 'f.name'])
 
       if(faculty_id){
-        qb.where('f.id = :facultyId', { facultyId: faculty_id })
+        qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
       }
       } else {
         if (!admin.faculty) {

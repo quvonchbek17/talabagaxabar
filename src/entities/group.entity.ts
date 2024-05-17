@@ -5,6 +5,7 @@ import { Education } from './education.entity';
 import { Course } from './course.entity';
 import { BotUser } from './botuser.entity';
 import { Faculty } from './faculty.entity';
+import { Schedule } from './schedule.entity';
 
 @Entity("groups")
 export class Group extends BaseModel {
@@ -30,6 +31,9 @@ export class Group extends BaseModel {
     @ManyToOne(type => Faculty, faculty => faculty.groups)
     @JoinColumn({name: "faculty_id"})
     faculty: Course;
+
+    @OneToMany(type => Schedule, schedule => schedule.group)
+    schedules: Schedule[];
 
     @OneToMany(type => BotUser, user => user.group)
     users: BotUser[];

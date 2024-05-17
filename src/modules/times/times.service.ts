@@ -57,7 +57,6 @@ export class TimesService {
     }
   }
 
-
   async get(
     search: string,
     faculty_id: string,
@@ -77,7 +76,7 @@ export class TimesService {
       let qb = this.timeRepo.createQueryBuilder('t');
 
       if (search) {
-        qb.where('t.name ILike :search', { search: `%${search}%` });
+        qb.andWhere('t.name ILike :search', { search: `%${search}%` });
       }
 
       if (admin.role?.name === rolesName.super_admin) {
@@ -89,7 +88,7 @@ export class TimesService {
         ]);
 
         if (faculty_id) {
-          qb.where('f.id = :facultyId', { facultyId: faculty_id });
+          qb.andWhere('f.id = :facultyId', { facultyId: faculty_id });
         }
       } else {
         if (!admin.faculty) {

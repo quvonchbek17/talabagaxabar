@@ -3,6 +3,7 @@ import { BaseModel } from './model.entity';
 import { Faculty } from './faculty.entity';
 import { Department } from './department.entity';
 import { Science } from './science.entity';
+import { Schedule } from './schedule.entity';
 
 @Entity("teachers")
 export class Teacher extends BaseModel {
@@ -30,5 +31,8 @@ export class Teacher extends BaseModel {
     @ManyToMany(type => Science, science => science.teachers, {onDelete: "SET NULL"})
     @JoinTable()
     sciences?: Science[];
+
+    @OneToMany(type => Schedule, schedule => schedule.teacher)
+    schedules: Schedule[];
 
 }

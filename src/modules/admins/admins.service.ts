@@ -299,7 +299,7 @@ export class AdminsService {
 
       let qb = this.adminsRepo.createQueryBuilder('a').innerJoin('a.role', 'r')
 
-      qb.where('r.name NOT IN (:...roleNames)', { roleNames: [rolesName.developer, rolesName.super_admin] })
+      qb.andWhere('r.name NOT IN (:...roleNames)', { roleNames: [rolesName.developer, rolesName.super_admin] })
 
       if (admin.role?.name === rolesName.super_admin) {
           qb.leftJoinAndSelect('a.university', 'u')
@@ -312,7 +312,7 @@ export class AdminsService {
           qb.innerJoin('a.faculty', 'f')
           .innerJoin('f.university', 'u')
           .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'r.name', 'f.id', 'f.name'])
-          .where('(r.name = :role1 OR r.name = :role2)', {
+          .andWhere('(r.name = :role1 OR r.name = :role2)', {
             role1: rolesName.faculty_admin,
             role2: rolesName.faculty_lead_admin,
           })
@@ -325,12 +325,12 @@ export class AdminsService {
           qb.innerJoin('a.faculty', 'f')
           .innerJoin('f.university', 'u')
           .select(['a.id', 'a.fullname', 'a.adminname', 'a.img', 'r.name', 'f.id', 'f.name'])
-          .where('r.name = :role', { role: rolesName.faculty_admin })
+          .andWhere('r.name = :role', { role: rolesName.faculty_admin })
           .andWhere('f.id = :facultyId', { facultyId: admin.faculty?.id })
       }
 
       if(search){
-        qb.where('a.fullname ILike :search OR a.adminname ILike :search OR u.name ILike :search OR f.name ILike :search OR r.name ILike :search', {
+        qb.andWhere('a.fullname ILike :search OR a.adminname ILike :search OR u.name ILike :search OR f.name ILike :search OR r.name ILike :search', {
           search: `%${search}%`,
         })
       }

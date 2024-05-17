@@ -114,17 +114,17 @@ export class TeachersService {
       .leftJoinAndSelect('t.sciences', 's')
 
       if(search){
-        qb.where('t.name ILike :search OR t.surname ILike :search', {
+        qb.andWhere('t.name ILike :search OR t.surname ILike :search', {
           search: `%${search}%`,
         })
       }
 
       if(department_id){
-        qb.where('d.id = :departmentId', { departmentId: department_id })
+        qb.andWhere('d.id = :departmentId', { departmentId: department_id })
       }
 
       if(science_id){
-        qb.where('s.id = :scienceId', { scienceId: science_id })
+        qb.andWhere('s.id = :scienceId', { scienceId: science_id })
       }
 
       if (admin.role?.name === rolesName.super_admin) {
@@ -132,7 +132,7 @@ export class TeachersService {
           .select(['t.id','t.name','t.surname','f.id','f.name','d.id','d.name','s.id','s.name',])
 
           if(faculty_id){
-            qb.where('f.id = :facultyId', { facultyId: faculty_id })
+            qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
           }
       } else {
         if (!admin.faculty) {

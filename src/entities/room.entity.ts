@@ -1,6 +1,7 @@
 import { Entity, Column, OneToMany, JoinColumn, ManyToOne } from 'typeorm'
 import { BaseModel } from './model.entity';
 import { Faculty } from './faculty.entity';
+import { Schedule } from './schedule.entity';
 
 @Entity("rooms")
 export class Room extends BaseModel {
@@ -26,5 +27,8 @@ export class Room extends BaseModel {
     @ManyToOne(type => Faculty, faculty => faculty.rooms)
     @JoinColumn({name: "faculty_id"})
     faculty: Faculty;
+
+    @OneToMany(type => Schedule, schedule => schedule.room)
+    schedules: Schedule[];
 
 }

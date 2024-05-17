@@ -47,7 +47,7 @@ export class UniversitiesService {
       let qb = this.universityRepo.createQueryBuilder('u');
 
       if (search) {
-        qb.where('u.name ILike :search', { search: `%${search}%` });
+        qb.andWhere('u.name ILike :search', { search: `%${search}%` });
       }
 
       let [universities, count] = await qb

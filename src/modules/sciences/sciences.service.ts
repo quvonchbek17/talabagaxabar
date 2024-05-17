@@ -74,7 +74,7 @@ export class SciencesService {
       let qb = this.scienceRepo.createQueryBuilder('s');
 
       if (search) {
-        qb.where('s.name ILike :search', { search: `%${search}%` });
+        qb.andWhere('s.name ILike :search', { search: `%${search}%` });
       }
 
       if (admin.role?.name === rolesName.super_admin) {
@@ -86,7 +86,7 @@ export class SciencesService {
         ]);
 
         if (faculty_id) {
-          qb.where('f.id = :facultyId', { facultyId: faculty_id });
+          qb.andWhere('f.id = :facultyId', { facultyId: faculty_id });
         }
       } else {
         if (!admin.faculty) {

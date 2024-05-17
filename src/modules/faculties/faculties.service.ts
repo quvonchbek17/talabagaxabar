@@ -73,7 +73,7 @@ export class FacultiesService {
 
       let qb = this.facultyRepo.createQueryBuilder('f')
       if(search){
-        qb.where('f.name ILike :search', { search: `%${search}%` })
+        qb.andWhere('f.name ILike :search', { search: `%${search}%` })
       }
 
       if (admin.role?.name === rolesName.super_admin) {

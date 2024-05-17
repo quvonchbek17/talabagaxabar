@@ -86,7 +86,7 @@ export class RoomsService {
       let qb = this.roomRepo.createQueryBuilder('r');
 
       if(search){
-        qb.where('r.name ILike :search', {
+        qb.andWhere('r.name ILike :search', {
           search: `%${search}%`,
         });
       }
@@ -96,7 +96,7 @@ export class RoomsService {
           .select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
 
           if(faculty_id){
-            qb.where('f.id = :facultyId', { facultyId: faculty_id })
+            qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
           }
       } else {
         if (!admin.faculty) {

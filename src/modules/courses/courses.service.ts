@@ -70,7 +70,7 @@ export class CoursesService {
 
       let qb = this.courseRepo.createQueryBuilder('c')
       if(search){
-        qb.where('c.name ILike :search', { search: `%${search}%` })
+        qb.andWhere('c.name ILike :search', { search: `%${search}%` })
       }
 
       if (admin.role?.name === rolesName.super_admin) {
@@ -78,7 +78,7 @@ export class CoursesService {
         .select(['c.id', 'c.name', 'f.id', 'f.name'])
 
         if(faculty_id){
-          qb.where('f.id = :facultyId', { facultyId: faculty_id })
+          qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
         }
       } else {
         if (!admin.faculty) {

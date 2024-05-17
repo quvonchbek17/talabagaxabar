@@ -121,19 +121,19 @@ export class GroupsService {
       .leftJoinAndSelect('g.direction', 'd')
       .leftJoinAndSelect('g.education', 'e')
       if(search){
-        qb.where('g.name ILike :search', { search: `%${search}%` })
+        qb.andWhere('g.name ILike :search', { search: `%${search}%` })
       }
 
       if(direction_id){
-        qb.where('d.id = :directionId', { directionId: direction_id })
+        qb.andWhere('d.id = :directionId', { directionId: direction_id })
       }
 
       if(course_id){
-        qb.where('c.id = :courseId', { courseId: course_id })
+        qb.andWhere('c.id = :courseId', { courseId: course_id })
       }
 
       if(education_id){
-        qb.where('e.id = :educationId', { educationId: education_id })
+        qb.andWhere('e.id = :educationId', { educationId: education_id })
       }
 
       if (admin.role?.name === rolesName.super_admin) {
@@ -141,7 +141,7 @@ export class GroupsService {
         .select(['g.id', 'g.name', 'f.id', 'f.name', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
 
         if(faculty_id){
-          qb.where('f.id = :facultyId', { facultyId: faculty_id })
+          qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
         }
       } else {
         if (!admin.faculty) {

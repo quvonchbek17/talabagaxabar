@@ -1,7 +1,8 @@
-import { Entity, Column,  ManyToOne, JoinColumn, ManyToMany } from 'typeorm'
+import { Entity, Column,  ManyToOne, JoinColumn, ManyToMany, OneToMany } from 'typeorm'
 import { BaseModel } from './model.entity';
 import { Faculty } from './faculty.entity';
 import { Teacher } from './teacher.entity';
+import { Schedule } from './schedule.entity';
 
 @Entity("sciences")
 export class Science extends BaseModel {
@@ -18,5 +19,8 @@ export class Science extends BaseModel {
 
     @ManyToMany(type => Teacher, teachers => teachers.sciences, {onDelete: "SET NULL"})
     teachers?: Teacher[];
+
+    @OneToMany(type => Schedule, schedule => schedule.science)
+    schedules: Schedule[];
 
 }

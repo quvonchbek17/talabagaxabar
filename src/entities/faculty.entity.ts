@@ -13,6 +13,7 @@ import { Location } from './location.entity';
 import { BotAdmin } from './botadmins.entity';
 import { Group } from './group.entity';
 import { Time } from './time.entity';
+import { Schedule } from './schedule.entity';
 
 @Entity("faculties")
 export class Faculty extends BaseModel {
@@ -56,6 +57,9 @@ export class Faculty extends BaseModel {
 
     @OneToMany((type) => Time, time => time.faculty)
     times: Time[];
+
+    @OneToMany((type) => Schedule, schedule => schedule.faculty)
+    schedules: Schedule[];
 
     @OneToMany((type) => Admin, admin => admin.faculty)
     admins: Admin[];

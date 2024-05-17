@@ -38,6 +38,7 @@ import { EducationsModule } from './modules/educations/educations.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { TimesModule } from './modules/times/times.module';
+import { SchedulesModule } from './modules/schedules/schedules.module';
 @Module({
   imports: [
     JwtModule.register({
@@ -78,7 +79,8 @@ import { TimesModule } from './modules/times/times.module';
     EducationsModule,
     CoursesModule,
     GroupsModule,
-    TimesModule
+    TimesModule,
+    SchedulesModule
   ],
 })
 export class AppModule {}
