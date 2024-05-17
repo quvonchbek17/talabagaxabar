@@ -33,10 +33,7 @@ export class SciencesService {
       });
 
       if (checkDuplicate) {
-        throw new HttpException(
-          "Bu fan avval qo'shilgan",
-          HttpStatus.CONFLICT,
-        );
+        throw new HttpException("Bu fan avval qo'shilgan", HttpStatus.CONFLICT);
       }
 
       let science = this.scienceRepo.create({
@@ -58,25 +55,39 @@ export class SciencesService {
     }
   }
 
-  async get(search: string, page: number, limit: number, adminId: string) {
+  async get(
+    search: string,
+    faculty_id: string,
+    page: number,
+    limit: number,
+    adminId: string,
+  ) {
     try {
-      page = page ? page : 1
-      limit = limit ? limit : 10
+      page = page ? page : 1;
+      limit = limit ? limit : 10;
 
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
-      let qb = this.scienceRepo.createQueryBuilder('s')
+      let qb = this.scienceRepo.createQueryBuilder('s');
 
-      if(search){
-        qb.where('s.name ILike :search', { search: `%${search}%` })
+      if (search) {
+        qb.where('s.name ILike :search', { search: `%${search}%` });
       }
 
       if (admin.role?.name === rolesName.super_admin) {
-      qb.innerJoin('s.faculty', 'f')
-      .select(['s.id', 's.name', 'f.id', 'f.name'])
+        qb.innerJoin('s.faculty', 'f').select([
+          's.id',
+          's.name',
+          'f.id',
+          'f.name',
+        ]);
+
+        if (faculty_id) {
+          qb.where('f.id = :facultyId', { facultyId: faculty_id });
+        }
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -85,13 +96,15 @@ export class SciencesService {
           );
         }
 
-        qb.select(['s.id', 's.name']).andWhere('s.faculty_id = :id', { id: admin.faculty?.id })
+        qb.select(['s.id', 's.name']).andWhere('s.faculty_id = :id', {
+          id: admin.faculty?.id,
+        });
       }
 
       let [sciences, count] = await qb
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .getManyAndCount();
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
         success: true,
@@ -104,7 +117,6 @@ export class SciencesService {
           items: sciences,
         },
       };
-
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -187,11 +199,15 @@ export class SciencesService {
         );
       }
 
-      let checkDuplicate = await this.scienceRepo.createQueryBuilder('s')
-      .innerJoin('s.faculty', 'f')
-      .where('s.id != :scienceId AND s.name = :name AND f.id = :facultyId',
-       {scienceId: science.id, name: body.name, facultyId: admin.faculty?.id })
-      .getOne()
+      let checkDuplicate = await this.scienceRepo
+        .createQueryBuilder('s')
+        .innerJoin('s.faculty', 'f')
+        .where('s.id != :scienceId AND s.name = :name AND f.id = :facultyId', {
+          scienceId: science.id,
+          name: body.name,
+          facultyId: admin.faculty?.id,
+        })
+        .getOne();
 
       if (checkDuplicate) {
         throw new HttpException(
@@ -232,7 +248,7 @@ export class SciencesService {
       }
 
       let science = await this.scienceRepo.findOne({
-        where: { id, faculty: {id: admin.faculty.id}}
+        where: { id, faculty: { id: admin.faculty.id } },
       });
 
       if (science) {
@@ -243,10 +259,7 @@ export class SciencesService {
           message: "O'chirildi",
         };
       } else {
-        throw new HttpException(
-          "Bunday fan yo'q",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new HttpException("Bunday fan yo'q", HttpStatus.NOT_FOUND);
       }
     } catch (error) {
       throw new HttpException(

@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, DefaultValuePipe, ParseIntPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto, UpdateRoomDto, RoomParamsIdDto } from './dto';
+import { CreateRoomDto, UpdateRoomDto, RoomParamsIdDto, FindAllQueryDto } from './dto';
 import { SetRoles, rolesName } from '@common';
 import { HasRole, JwtAuthGuard } from '@guards';
 
@@ -19,12 +19,13 @@ export class RoomsController {
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Get()
-  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('capacityTo', new DefaultValuePipe(0), ParseIntPipe) capacityTo: number, @Query('capacityFrom', new DefaultValuePipe(0), ParseIntPipe) capacityFrom: number, @Query('floor', new DefaultValuePipe(0), ParseIntPipe) floor: number, @Query('search') search: string, @Query() allquery: any) {
+  async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('capacityTo', new DefaultValuePipe(0), ParseIntPipe) capacityTo: number, @Query('capacityFrom', new DefaultValuePipe(0), ParseIntPipe) capacityFrom: number, @Query('floor', new DefaultValuePipe(0), ParseIntPipe) floor: number,  @Query() allquery: FindAllQueryDto) {
        try {
-        if (search || capacityTo || capacityFrom || floor || page || limit) {
-          return this.roomsService.get(search, capacityTo, capacityFrom, floor, page, limit, req.user.id);
+        const {search, faculty_id} = allquery
+        if (search ||  faculty_id || capacityTo || capacityFrom || floor || page || limit) {
+          return this.roomsService.get(search,faculty_id, capacityTo, capacityFrom, floor, page, limit, req.user.id);
         } else if(Object.keys(allquery).length === 0) {
-          return this.roomsService.get("", 0, 0, 0, 0, 0, req.user.id);
+          return this.roomsService.get("", "", 0, 0, 0, 0, 0, req.user.id);
         } else {
           throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
         }

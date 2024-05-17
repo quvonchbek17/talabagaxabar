@@ -21,6 +21,7 @@ import { DirectionsService } from './directions.service';
 import {
   CreateDirectionDto,
   DirectionParamsIdDto,
+  FindAllQueryDto,
   UpdateDirectionDto,
 } from './dto';
 
@@ -46,19 +47,20 @@ export class DirectionsController {
     @Req() req: Request,
     @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number,
-    @Query('search') search: string,
-    @Query() allquery: any,
+    @Query() allquery: FindAllQueryDto,
   ) {
     try {
-      if (search || page || limit) {
+      const { search, faculty_id } = allquery
+      if (search || faculty_id || page || limit) {
         return this.directionsService.get(
           search,
+          faculty_id,
           page,
           limit,
           req.user.id,
         );
       } else if (Object.keys(allquery).length === 0) {
-        return this.directionsService.get("", 0, 0, req.user.id);
+        return this.directionsService.get("", "", 0, 0, req.user.id);
       } else {
         throw new HttpException(
           "Bunday so'rov mavjud emas",

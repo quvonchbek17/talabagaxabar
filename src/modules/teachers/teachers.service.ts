@@ -99,7 +99,7 @@ export class TeachersService {
     }
   }
 
-  async get(search: string, page: number, limit: number, adminId: string) {
+  async get(search: string, department_id: string, science_id: string, faculty_id: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1;
       limit = limit ? limit : 10;
@@ -119,9 +119,21 @@ export class TeachersService {
         })
       }
 
+      if(department_id){
+        qb.where('d.id = :departmentId', { departmentId: department_id })
+      }
+
+      if(science_id){
+        qb.where('s.id = :scienceId', { scienceId: science_id })
+      }
+
       if (admin.role?.name === rolesName.super_admin) {
           qb.leftJoinAndSelect('t.faculty', 'f')
           .select(['t.id','t.name','t.surname','f.id','f.name','d.id','d.name','s.id','s.name',])
+
+          if(faculty_id){
+            qb.where('f.id = :facultyId', { facultyId: faculty_id })
+          }
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -258,7 +270,7 @@ export class TeachersService {
         );
       }
 
-      let { nonExistingScienceIds, existingSciences } =
+      let {nonExistingScienceIds, existingSciences } =
         await this.checkExistingSciences(body?.sciences);
       if (nonExistingScienceIds.length > 0) {
         throw new HttpException(

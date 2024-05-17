@@ -64,6 +64,7 @@ export class RoomsService {
 
   async get(
     search: string,
+    faculty_id: string,
     capacityTo: number,
     capacityFrom: number,
     floor: number,
@@ -92,6 +93,9 @@ export class RoomsService {
         qb.innerJoin('r.faculty', 'f')
           .select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
 
+          if(faculty_id){
+            qb.where('f.id = :facultyId', { facultyId: faculty_id })
+          }
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -219,7 +223,7 @@ export class RoomsService {
       let checkDuplicate = await this.roomRepo.createQueryBuilder('r')
       .innerJoin('r.faculty', 'f')
       .where('r.id != :roomId AND r.name = :name AND r.capacity = :capacity AND r.floor = :floor AND f.id = :facultyId',
-       {roomId: room.id ,name: body.name, capacity: body.capacity, floor: body.floor, facultyId: admin.faculty?.id })
+       {roomId: room.id ,name: body.name, capacity: body.capacity || room.capacity, floor: body.floor || room.floor, facultyId: admin.faculty?.id })
       .getOne()
 
       if (checkDuplicate) {
@@ -232,6 +236,7 @@ export class RoomsService {
       room.name = body.name || room.name
       room.floor = body.floor || room.floor
       room.capacity = body.capacity || room.capacity
+      room.updated_at = new Date()
 
       await this.roomRepo.save(room)
       return {

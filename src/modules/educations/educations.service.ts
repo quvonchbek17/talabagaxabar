@@ -58,7 +58,7 @@ export class EducationsService {
     }
   }
 
-  async get(search: string, page: number, limit: number, adminId: string) {
+  async get(search: string, faculty_id: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1
       limit = limit ? limit : 10
@@ -76,6 +76,10 @@ export class EducationsService {
       if (admin.role?.name === rolesName.super_admin) {
         qb.innerJoin('e.faculty', 'f')
         .select(['e.id', 'e.name', 'f.id', 'f.name'])
+
+        if(faculty_id){
+          qb.where('f.id = :facultyId', { facultyId: faculty_id })
+        }
       } else {
         if (!admin.faculty) {
           throw new HttpException(

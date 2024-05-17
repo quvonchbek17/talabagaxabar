@@ -11,6 +11,7 @@ import { Teacher } from './teacher.entity';
 import { Room } from './room.entity';
 import { Location } from './location.entity';
 import { BotAdmin } from './botadmins.entity';
+import { Group } from './group.entity';
 
 @Entity("faculties")
 export class Faculty extends BaseModel {
@@ -48,6 +49,9 @@ export class Faculty extends BaseModel {
 
     @OneToMany((type) => Location, location => location.faculty)
     locations: Location[];
+
+    @OneToMany((type) => Group, group => group.faculty)
+    groups: Group[];
 
     @OneToMany((type) => Admin, admin => admin.faculty)
     admins: Admin[];
