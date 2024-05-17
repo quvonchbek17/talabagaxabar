@@ -43,16 +43,18 @@ export class RoomsService {
         );
       }
 
-      let department = this.roomRepo.create({
-        ...body,
+      let room = this.roomRepo.create({
+        name: body.name,
+        capacity: body.capacity,
+        floor: body.floor,
         faculty: admin.faculty,
       });
-      await department.save();
+      await room.save();
       return {
         statusCode: HttpStatus.OK,
         message: 'Xona saqlandi',
         success: true,
-        data: department,
+        data: room,
       };
     } catch (error) {
       throw new HttpException(

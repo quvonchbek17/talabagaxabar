@@ -43,7 +43,7 @@ export class FacultiesService {
       }
 
       let faculty = this.facultyRepo.create({
-        ...body,
+        name: body.name,
         university: admin.university,
       });
       await faculty.save();

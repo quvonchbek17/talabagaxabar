@@ -15,3 +15,4 @@ export * from "./science.entity";
 export * from "./teacher.entity";
 export * from "./university.entity";
 export * from "./permission.entity";
+export * from "./time.entity";

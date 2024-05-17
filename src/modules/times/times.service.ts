@@ -1,20 +1,22 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { CreateTimeDto } from './dto/create-time.dto';
+import { UpdateTimeDto } from './dto/update-time.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
-import { Direction, Admin } from '@entities';
+import { Admin, Time } from '@entities';
+import { Repository } from 'typeorm';
 import { rolesName } from '@common';
-import { CreateDirectionDto, UpdateDirectionDto } from './dto';
 
 @Injectable()
-export class DirectionsService {
-   constructor(
-    @InjectRepository(Direction)
-    private readonly directionRepo: Repository<Direction>,
-    @InjectRepository(Admin)
-    private readonly adminRepo: Repository<Admin>
-   ){}
+export class TimesService {
 
-   async create(body: CreateDirectionDto, adminId: string) {
+  constructor(
+    @InjectRepository(Time)
+    private readonly timeRepo: Repository<Time>,
+    @InjectRepository(Admin)
+    private readonly adminRepo: Repository<Admin>,
+  ) {}
+
+  async create(body: CreateTimeDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
@@ -28,30 +30,24 @@ export class DirectionsService {
         );
       }
 
-      let checkDuplicate = await this.directionRepo.findOne({
-        where: { name: body.name, faculty: { id: admin.faculty.id } },
+      let checkDuplicate = await this.timeRepo.findOne({
+        where: { name: body.name, faculty: { id: admin.faculty?.id } },
       });
 
       if (checkDuplicate) {
-        throw new HttpException(
-          "Bu yo'nalish avval qo'shilgan",
-          HttpStatus.CONFLICT,
-        );
+        throw new HttpException("Bu vaqt avval qo'shilgan", HttpStatus.CONFLICT);
       }
 
-      let direction = this.directionRepo.create({
+      let time = this.timeRepo.create({
         name: body.name,
         faculty: admin.faculty,
       });
-      await direction.save();
-
-      delete direction.faculty.created_at
-      delete direction.faculty.updated_at
+      await time.save();
       return {
         statusCode: HttpStatus.OK,
-        message: "Yo'nalish saqlandi",
+        message: 'Vaqt saqlandi',
         success: true,
-        data: direction,
+        data: time,
       };
     } catch (error) {
       throw new HttpException(
@@ -61,28 +57,40 @@ export class DirectionsService {
     }
   }
 
-  async get(search: string, faculty_id: string, page: number, limit: number, adminId: string) {
+
+  async get(
+    search: string,
+    faculty_id: string,
+    page: number,
+    limit: number,
+    adminId: string,
+  ) {
     try {
-      page = page ? page : 1
-      limit = limit ? limit : 10
+      page = page ? page : 1;
+      limit = limit ? limit : 10;
 
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
 
-      let qb = this.directionRepo.createQueryBuilder('d')
-      if(search){
-        qb.where('d.name ILike :search', { search: `%${search}%` })
+      let qb = this.timeRepo.createQueryBuilder('t');
+
+      if (search) {
+        qb.where('t.name ILike :search', { search: `%${search}%` });
       }
 
       if (admin.role?.name === rolesName.super_admin) {
-       qb.innerJoin('d.faculty', 'f')
-      .select(['d.id', 'd.name', 'f.id', 'f.name'])
+        qb.innerJoin('t.faculty', 'f').select([
+          't.id',
+          't.name',
+          'f.id',
+          'f.name',
+        ]);
 
-      if(faculty_id){
-        qb.where('f.id = :facultyId', { facultyId: faculty_id })
-      }
+        if (faculty_id) {
+          qb.where('f.id = :facultyId', { facultyId: faculty_id });
+        }
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -91,13 +99,15 @@ export class DirectionsService {
           );
         }
 
-        qb.select(['d.id', 'd.name']).andWhere('d.faculty_id = :id', { id: admin.faculty?.id })
+        qb.select(['t.id', 't.name']).andWhere('t.faculty_id = :id', {
+          id: admin.faculty?.id,
+        });
       }
 
-      let [directions, count] = await qb
-      .offset((page - 1) * limit)
-      .limit(limit)
-      .getManyAndCount();
+      let [times, count] = await qb
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .getManyAndCount();
       return {
         statusCode: HttpStatus.OK,
         success: true,
@@ -107,7 +117,7 @@ export class DirectionsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: directions,
+          items: times,
         },
       };
     } catch (error) {
@@ -126,14 +136,14 @@ export class DirectionsService {
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let direction = await this.directionRepo.findOne({
+        let time = await this.timeRepo.findOne({
           where: { id },
           relations: { faculty: true },
         });
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: direction,
+          data: time,
         };
       }
 
@@ -143,18 +153,18 @@ export class DirectionsService {
           HttpStatus.FORBIDDEN,
         );
       }
-      let direction = await this.directionRepo.findOne({
-        where: { id, faculty: { id: admin.faculty.id } },
+      let time = await this.timeRepo.findOne({
+        where: { id, faculty: { id: admin.faculty?.id } },
       });
-      if (direction) {
+      if (time) {
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: direction,
+          data: time,
         };
       } else {
         throw new HttpException(
-          "Sizning fakultetingizda bunday idlik yo'nalish yo'q",
+          "Sizning fakultetingizda bunday idlik vaqt yo'q",
           HttpStatus.NOT_FOUND,
         );
       }
@@ -166,7 +176,7 @@ export class DirectionsService {
     }
   }
 
-  async update(id: string, body: UpdateDirectionDto, adminId: string) {
+  async update(id: string, body: UpdateTimeDto, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({
         where: { id: adminId },
@@ -180,39 +190,43 @@ export class DirectionsService {
         );
       }
 
-      let direction = await this.directionRepo.findOne({
-        where: { id, faculty: { id: admin.faculty.id } },
+      let time = await this.timeRepo.findOne({
+        where: { id, faculty: { id: admin.faculty?.id } },
         relations: { faculty: true },
       });
 
-      if (!direction) {
+      if (!time) {
         throw new HttpException(
-          "Bunday yo'nalish mavjud emas yoki siz uchun ruxsat berilmagan",
+          'Bunday vaqt mavjud emas yoki siz uchun ruxsat berilmagan',
           HttpStatus.NOT_FOUND,
         );
       }
 
-      let checkDuplicate = await this.directionRepo.createQueryBuilder('d')
-      .innerJoin('d.faculty', 'f')
-      .where('d.id != :directionId AND d.name = :name AND f.id = :facultyId',
-       {directionId: direction.id, name: body.name, facultyId: admin.faculty?.id })
-      .getOne()
+      let checkDuplicate = await this.timeRepo
+        .createQueryBuilder('t')
+        .innerJoin('t.faculty', 'f')
+        .where('t.id != :timeId AND t.name = :name AND f.id = :facultyId', {
+          timeId: time.id,
+          name: body.name,
+          facultyId: admin.faculty?.id,
+        })
+        .getOne();
 
       if (checkDuplicate) {
         throw new HttpException(
-          "Bu nomlik yo'nalish allaqachon mavjud",
+          'Bu vaqt allaqachon mavjud',
           HttpStatus.CONFLICT,
         );
       }
-      await this.directionRepo.update(id, {
-        name: body.name || direction.name,
+      await this.timeRepo.update(id, {
+        name: body.name || time.name,
         updated_at: new Date(),
       });
       return {
         success: true,
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
-        data: await this.directionRepo.findOne({ where: { id } }),
+        data: await this.timeRepo.findOne({ where: { id } }),
       };
     } catch (error) {
       throw new HttpException(
@@ -236,22 +250,19 @@ export class DirectionsService {
         );
       }
 
-      let direction = await this.directionRepo.findOne({
-        where: { id, faculty: {id: admin.faculty.id}}
+      let time = await this.timeRepo.findOne({
+        where: { id, faculty: { id: admin.faculty.id } },
       });
 
-      if (direction) {
-        await this.directionRepo.remove(direction);
+      if (time) {
+        await this.timeRepo.remove(time);
         return {
           success: true,
           statusCode: HttpStatus.OK,
           message: "O'chirildi",
         };
       } else {
-        throw new HttpException(
-          "Bunday yo'nalish yo'q",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new HttpException("Bunday vaqt yo'q", HttpStatus.NOT_FOUND);
       }
     } catch (error) {
       throw new HttpException(

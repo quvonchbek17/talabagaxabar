@@ -40,7 +40,7 @@ export class CoursesService {
       }
 
       let course = this.courseRepo.create({
-        ...body,
+        name: body.name,
         faculty: admin.faculty,
       });
       await course.save();

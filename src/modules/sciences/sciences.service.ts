@@ -37,7 +37,7 @@ export class SciencesService {
       }
 
       let science = this.scienceRepo.create({
-        ...body,
+        name: body.name,
         faculty: admin.faculty,
       });
       await science.save();
@@ -133,14 +133,14 @@ export class SciencesService {
       });
 
       if (admin.role?.name === rolesName.super_admin) {
-        let department = await this.scienceRepo.findOne({
+        let science = await this.scienceRepo.findOne({
           where: { id },
           relations: { faculty: true },
         });
         return {
           statusCode: HttpStatus.OK,
           success: true,
-          data: department,
+          data: science,
         };
       }
 
