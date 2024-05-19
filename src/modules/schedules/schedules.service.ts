@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +13,10 @@ import {
 } from '@entities';
 import { Not, Repository } from 'typeorm';
 import { rolesName } from '@common';
+
+import * as PDFDocument from 'pdfkit';
+import * as fs from 'fs';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class SchedulesService {
@@ -31,7 +35,77 @@ export class SchedulesService {
     private readonly timeRepo: Repository<Time>,
     @InjectRepository(Room)
     private readonly roomRepo: Repository<Room>,
+    @Inject('CACHE_MANAGER')
+    private cacheManager: Cache
   ) {}
+
+  async createSchedulePdf(): Promise<string> {
+    let scheduleData = await this.scheduleRepo.find({
+      relations: {time: true, teacher: true, science: true, room: true, group: true}
+    })
+    const doc = new PDFDocument({ margin: 30 });
+    const fileName = `Schedule-${Date.now()}.pdf`;
+    const filePath = `./${fileName}`;
+
+    // Create a write stream for the PDF file
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
+
+    // Title
+    doc.fontSize(16).text('Jadval', { align: 'center' });
+    doc.moveDown();
+
+    // Days of the week
+    const daysOfWeek = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma'];
+
+    // Get unique groups from the schedule data
+    const groups = [...new Set(scheduleData.map(item => item.group.name))];
+
+    // Table header
+    let startX = 50;
+    let startY = 100;
+    const cellWidth = 120;
+    const cellHeight = 40;
+
+    doc.fontSize(12);
+
+    // Header Row
+    doc.text(' ', startX, startY, { width: cellWidth, align: 'center' });
+    groups.forEach((group, i) => {
+      doc.text(group, startX + cellWidth * (i + 1), startY, { width: cellWidth, align: 'center' });
+    });
+    startY += cellHeight;
+
+    // Fill table with schedule data
+    daysOfWeek.forEach(day => {
+      doc.text(day, startX, startY, { width: cellWidth, align: 'center'  });
+
+      groups.forEach((group, i) => {
+        const scheduleForGroupAndDay = scheduleData.filter(item => item.day === day && item.group.name === group);
+
+        if (scheduleForGroupAndDay.length > 0) {
+          const scheduleText = scheduleForGroupAndDay.map(item => `${item.time.name}, ${item.teacher.name} ${item.teacher.surname}, ${item.room.name}, ${item.science.name}`).join('\n');
+          doc.text(scheduleText, startX + cellWidth * (i + 1), startY, { width: cellWidth, align: 'left' });
+        } else {
+          doc.text(' ', startX + cellWidth * (i + 1), startY, { width: cellWidth, align: 'center' });
+        }
+      });
+      startY += cellHeight;
+    });
+
+    // End and save the PDF document
+    doc.end();
+
+    return new Promise((resolve, reject) => {
+      writeStream.on('finish', () => {
+        resolve(filePath);
+      });
+
+      writeStream.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
 
   async create(body: CreateScheduleDto, adminId: string) {
     try {
@@ -168,42 +242,59 @@ export class SchedulesService {
         relations: { faculty: true, role: true },
       });
 
+
+    //////////////// CACHE ///////////////////
+    let allCachedSchedules: any[] = await this.cacheManager.get("allSchedules");
+
+    const filterSchedules = (schedules) => {
+      return schedules.filter(schedule => {
+        let isMatch = true;
+        if (day && schedule.day !== day) isMatch = false;
+        if (teacher_id && schedule.teacher.id !== teacher_id) isMatch = false;
+        if (time_id && schedule.time.id !== time_id) isMatch = false;
+        if (room_id && schedule.room.id !== room_id) isMatch = false;
+        if (group_id && schedule.group.id !== group_id) isMatch = false;
+        if (science_id && schedule.science.id !== science_id) isMatch = false;
+        if (faculty_id && schedule.faculty?.id !== faculty_id) isMatch = false;
+        if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && schedule.faculty.id !== admin.faculty.id) isMatch = false;
+        return isMatch;
+      });
+    };
+
+    if (allCachedSchedules) {
+      const filteredSchedules = filterSchedules(allCachedSchedules);
+      const totalCount = filteredSchedules.length;
+      const paginatedSchedules = filteredSchedules.slice((page - 1) * limit, page * limit);
+
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          items: paginatedSchedules,
+        },
+      };
+    }
+ ///////////////////// CACHE END ////////////////////////////////////
+
       let qb = this.scheduleRepo
         .createQueryBuilder('sch')
         .leftJoinAndSelect('sch.room', 'r')
         .leftJoinAndSelect('sch.teacher', 't')
         .leftJoinAndSelect('sch.group', 'g')
         .leftJoinAndSelect('sch.time', 'time')
-        .leftJoinAndSelect('sch.science', 's');
+        .leftJoinAndSelect('sch.science', 's')
+        .leftJoinAndSelect('sch.faculty', 'f')
 
-      if (day) {
-        qb.andWhere('sch.day = :day', {
-          day: day
-        });
-      }
-
-      if (teacher_id) {
-        qb.andWhere('t.id = :teacherId', { teacherId: teacher_id });
-      }
-
-      if (science_id) {
-        qb.andWhere('s.id = :scienceId', { scienceId: science_id });
-      }
-
-      if (time_id) {
-        qb.andWhere('time.id = :timeId', { timeId: time_id });
-      }
-
-      if (group_id) {
-        qb.andWhere('g.id = :groupId', { groupId: group_id });
-      }
-
-      if (room_id) {
-        qb.andWhere('r.id = :roomId', { roomId: room_id });
-      }
-
+        let allSchedules  = await qb.select(['sch.id','sch.day','t.id','t.name','t.surname','time.id','time.name',
+          'r.id','r.name','r.floor','r.capacity','g.id','g.name','s.id','s.name','f.id','f.name',]).getMany()
+        this.cacheManager.set("allSchedules", allSchedules)
       if (admin.role?.name === rolesName.super_admin) {
-        qb.leftJoinAndSelect('sch.faculty', 'f').select([
+        qb.select([
           'sch.id',
           'sch.day',
           't.id',
@@ -251,6 +342,32 @@ export class SchedulesService {
           's.id',
           's.name',
         ]).andWhere('t.faculty_id = :id', { id: admin.faculty?.id });
+      }
+
+      if (day) {
+        qb.andWhere('sch.day = :day', {
+          day: day
+        });
+      }
+
+      if (teacher_id) {
+        qb.andWhere('t.id = :teacherId', { teacherId: teacher_id });
+      }
+
+      if (science_id) {
+        qb.andWhere('s.id = :scienceId', { scienceId: science_id });
+      }
+
+      if (time_id) {
+        qb.andWhere('time.id = :timeId', { timeId: time_id });
+      }
+
+      if (group_id) {
+        qb.andWhere('g.id = :groupId', { groupId: group_id });
+      }
+
+      if (room_id) {
+        qb.andWhere('r.id = :roomId', { roomId: room_id });
       }
 
       let [schedules, count] = await qb

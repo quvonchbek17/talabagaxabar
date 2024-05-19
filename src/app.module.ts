@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager'
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmAsyncConfig } from './ormconfig/typeorm.config';
@@ -43,6 +44,10 @@ import { SchedulesModule } from './modules/schedules/schedules.module';
   imports: [
     JwtModule.register({
       secret: process.env.SECRET_KEY,
+    }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 1000*60*60*6
     }),
     ConfigModule.forRoot(config),
     TypeOrmModule.forRootAsync(typeOrmAsyncConfig),

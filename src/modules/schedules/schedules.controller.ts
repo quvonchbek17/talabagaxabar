@@ -14,11 +14,14 @@ import {
   ParseIntPipe,
   HttpException,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard, HasRole } from '@guards';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto, FindAllQueryDto, ScheduleParamsIdDto, UpdateScheduleDto } from './dto';
+import * as fs from 'fs';
+
 
 @Controller('schedules')
 export class SchedulesController {
@@ -30,6 +33,32 @@ export class SchedulesController {
   async create(@Body() body: CreateScheduleDto, @Req() req: Request) {
     return this.schedulesService.create(body, req.user?.id);
   }
+
+
+  // @Get('pdf')
+  // async getSchedulePdf(@Res() res: Response) {
+  //   try {
+  //     const filePath = await this.schedulesService.createSchedulePdf();
+  //     res.download(filePath, 'Schedule.pdf', (err) => {
+  //       if (err) {
+  //         res.status(500).send({
+  //           statusCode: 500,
+  //           success: false,
+  //           message: 'PDF yaratishda xatolik yuz berdi',
+  //         });
+  //       }
+
+  //       // Faylni o'chirish
+  //       fs.unlinkSync(filePath);
+  //     });
+  //   } catch (error) {
+  //     res.status(500).send({
+  //       statusCode: 500,
+  //       success: false,
+  //       message: 'PDF yaratishda xatolik yuz berdi',
+  //     });
+  //   }
+  // }
 
   @SetRoles(
     rolesName.faculty_admin,
