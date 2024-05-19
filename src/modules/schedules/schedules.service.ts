@@ -269,6 +269,7 @@ export class SchedulesService {
       return {
         statusCode: HttpStatus.OK,
         success: true,
+        caches: true,
         message: 'success',
         data: {
           currentPage: page,
