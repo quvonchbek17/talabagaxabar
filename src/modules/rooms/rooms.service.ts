@@ -1,9 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateRoomDto, UpdateRoomDto } from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Admin, Room } from '@entities';
 import { rolesName } from '@common';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class RoomsService {
@@ -12,6 +13,8 @@ export class RoomsService {
     private readonly roomRepo: Repository<Room>,
     @InjectRepository(Admin)
     private readonly adminRepo: Repository<Admin>,
+    @Inject('CACHE_MANAGER')
+    private cacheManager: Cache
   ) {}
 
   async create(body: CreateRoomDto, adminId: string) {
@@ -83,17 +86,51 @@ export class RoomsService {
         relations: { faculty: true, role: true },
       });
 
-      let qb = this.roomRepo.createQueryBuilder('r');
 
-      if(search){
-        qb.andWhere('r.name ILike :search', {
-          search: `%${search}%`,
-        });
-      }
+         //////////////// CACHE ///////////////////
+    let allCachedRooms: any[] = await this.cacheManager.get("allRooms");
 
+    const filterRooms = (rooms) => {
+      return rooms.filter(room => {
+        let isMatch = true;
+        if (search && !room.name.includes(search)) isMatch = false;
+        if (capacityTo && room.capacity > capacityTo) isMatch = false;
+        if (capacityFrom && room.capacity < capacityFrom) isMatch = false;
+        if (floor && room.floor !== floor) isMatch = false;
+        if (faculty_id && room.faculty?.id !== faculty_id) isMatch = false;
+        if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && room.faculty.id !== admin.faculty.id) isMatch = false;
+        return isMatch;
+      });
+    };
+
+    if (allCachedRooms) {
+      const filteredRooms = filterRooms(allCachedRooms);
+      const totalCount = filteredRooms.length;
+      const paginatedRooms = filteredRooms.slice((page - 1) * limit, page * limit);
+
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        cached: true,
+        message: 'success',
+        data: {
+          currentPage: page,
+          currentCount: limit,
+          totalCount: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          items: paginatedRooms,
+        },
+      };
+    }
+ ///////////////////// CACHE END ////////////////////////////////////
+
+      let qb = this.roomRepo.createQueryBuilder('r')
+      .innerJoin('r.faculty', 'f')
+
+      let allRooms = await qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name']).getMany()
+      this.cacheManager.set("allRooms", allRooms)
       if (admin.role?.name === rolesName.super_admin) {
-        qb.innerJoin('r.faculty', 'f')
-          .select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
+        qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
 
           if(faculty_id){
             qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
@@ -107,6 +144,12 @@ export class RoomsService {
         }
         qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor'])
           .andWhere('r.faculty_id = :id', { id: admin.faculty?.id })
+      }
+
+      if(search){
+        qb.andWhere('r.name ILike :search', {
+          search: `%${search}%`,
+        });
       }
 
       if (floor) {
