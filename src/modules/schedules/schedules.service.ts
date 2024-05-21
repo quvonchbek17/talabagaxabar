@@ -244,42 +244,42 @@ export class SchedulesService {
 
 
     //////////////// CACHE ///////////////////
-    let allCachedSchedules: any[] = await this.cacheManager.get("allSchedules");
+    // let allCachedSchedules: any[] = await this.cacheManager.get("allSchedules");
 
-    const filterSchedules = (schedules) => {
-      return schedules.filter(schedule => {
-        let isMatch = true;
-        if (day && schedule.day !== day) isMatch = false;
-        if (teacher_id && schedule.teacher.id !== teacher_id) isMatch = false;
-        if (time_id && schedule.time.id !== time_id) isMatch = false;
-        if (room_id && schedule.room.id !== room_id) isMatch = false;
-        if (group_id && schedule.group.id !== group_id) isMatch = false;
-        if (science_id && schedule.science.id !== science_id) isMatch = false;
-        if (faculty_id && schedule.faculty?.id !== faculty_id) isMatch = false;
-        if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && schedule.faculty.id !== admin.faculty.id) isMatch = false;
-        return isMatch;
-      });
-    };
+    // const filterSchedules = (schedules) => {
+    //   return schedules.filter(schedule => {
+    //     let isMatch = true;
+    //     if (day && schedule.day !== day) isMatch = false;
+    //     if (teacher_id && schedule.teacher.id !== teacher_id) isMatch = false;
+    //     if (time_id && schedule.time.id !== time_id) isMatch = false;
+    //     if (room_id && schedule.room.id !== room_id) isMatch = false;
+    //     if (group_id && schedule.group.id !== group_id) isMatch = false;
+    //     if (science_id && schedule.science.id !== science_id) isMatch = false;
+    //     if (faculty_id && schedule.faculty?.id !== faculty_id) isMatch = false;
+    //     if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && schedule.faculty.id !== admin.faculty.id) isMatch = false;
+    //     return isMatch;
+    //   });
+    // };
 
-    if (allCachedSchedules) {
-      const filteredSchedules = filterSchedules(allCachedSchedules);
-      const totalCount = filteredSchedules.length;
-      const paginatedSchedules = filteredSchedules.slice((page - 1) * limit, page * limit);
+    // if (allCachedSchedules) {
+    //   const filteredSchedules = filterSchedules(allCachedSchedules);
+    //   const totalCount = filteredSchedules.length;
+    //   const paginatedSchedules = filteredSchedules.slice((page - 1) * limit, page * limit);
 
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        cached: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: totalCount,
-          totalPages: Math.ceil(totalCount / limit),
-          items: paginatedSchedules,
-        },
-      };
-    }
+    //   return {
+    //     statusCode: HttpStatus.OK,
+    //     success: true,
+    //     cached: true,
+    //     message: 'success',
+    //     data: {
+    //       currentPage: page,
+    //       currentCount: limit,
+    //       totalCount: totalCount,
+    //       totalPages: Math.ceil(totalCount / limit),
+    //       items: paginatedSchedules,
+    //     },
+    //   };
+    // }
  ///////////////////// CACHE END ////////////////////////////////////
 
       let qb = this.scheduleRepo

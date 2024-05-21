@@ -88,40 +88,40 @@ export class RoomsService {
 
 
          //////////////// CACHE ///////////////////
-    let allCachedRooms: any[] = await this.cacheManager.get("allRooms");
+    // let allCachedRooms: any[] = await this.cacheManager.get("allRooms");
 
-    const filterRooms = (rooms) => {
-      return rooms.filter(room => {
-        let isMatch = true;
-        if (search && !room.name.includes(search)) isMatch = false;
-        if (capacityTo && room.capacity > capacityTo) isMatch = false;
-        if (capacityFrom && room.capacity < capacityFrom) isMatch = false;
-        if (floor && room.floor !== floor) isMatch = false;
-        if (faculty_id && room.faculty?.id !== faculty_id) isMatch = false;
-        if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && room.faculty.id !== admin.faculty.id) isMatch = false;
-        return isMatch;
-      });
-    };
+    // const filterRooms = (rooms) => {
+    //   return rooms.filter(room => {
+    //     let isMatch = true;
+    //     if (search && !room.name.includes(search)) isMatch = false;
+    //     if (capacityTo && room.capacity > capacityTo) isMatch = false;
+    //     if (capacityFrom && room.capacity < capacityFrom) isMatch = false;
+    //     if (floor && room.floor !== floor) isMatch = false;
+    //     if (faculty_id && room.faculty?.id !== faculty_id) isMatch = false;
+    //     if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && room.faculty.id !== admin.faculty.id) isMatch = false;
+    //     return isMatch;
+    //   });
+    // };
 
-    if (allCachedRooms) {
-      const filteredRooms = filterRooms(allCachedRooms);
-      const totalCount = filteredRooms.length;
-      const paginatedRooms = filteredRooms.slice((page - 1) * limit, page * limit);
+    // if (allCachedRooms) {
+    //   const filteredRooms = filterRooms(allCachedRooms);
+    //   const totalCount = filteredRooms.length;
+    //   const paginatedRooms = filteredRooms.slice((page - 1) * limit, page * limit);
 
-      return {
-        statusCode: HttpStatus.OK,
-        success: true,
-        cached: true,
-        message: 'success',
-        data: {
-          currentPage: page,
-          currentCount: limit,
-          totalCount: totalCount,
-          totalPages: Math.ceil(totalCount / limit),
-          items: paginatedRooms,
-        },
-      };
-    }
+    //   return {
+    //     statusCode: HttpStatus.OK,
+    //     success: true,
+    //     cached: true,
+    //     message: 'success',
+    //     data: {
+    //       currentPage: page,
+    //       currentCount: limit,
+    //       totalCount: totalCount,
+    //       totalPages: Math.ceil(totalCount / limit),
+    //       items: paginatedRooms,
+    //     },
+    //   };
+    // }
  ///////////////////// CACHE END ////////////////////////////////////
 
       let qb = this.roomRepo.createQueryBuilder('r')
