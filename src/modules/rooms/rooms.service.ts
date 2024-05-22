@@ -16,7 +16,7 @@ export class RoomsService {
     @InjectRepository(Admin)
     private readonly adminRepo: Repository<Admin>,
     @Inject('CACHE_MANAGER')
-    private cacheManager: Cache
+    private cacheManager: Cache,
   ) {}
 
   async create(body: CreateRoomDto, adminId: string) {
@@ -90,55 +90,61 @@ export class RoomsService {
         relations: { faculty: true, role: true },
       });
 
+      //////////////// CACHE ///////////////////
+      // let allCachedRooms: any[] = await this.cacheManager.get("allRooms");
 
-         //////////////// CACHE ///////////////////
-    // let allCachedRooms: any[] = await this.cacheManager.get("allRooms");
+      // const filterRooms = (rooms) => {
+      //   return rooms.filter(room => {
+      //     let isMatch = true;
+      //     if (search && !room.name.includes(search)) isMatch = false;
+      //     if (capacityTo && room.capacity > capacityTo) isMatch = false;
+      //     if (capacityFrom && room.capacity < capacityFrom) isMatch = false;
+      //     if (floor && room.floor !== floor) isMatch = false;
+      //     if (faculty_id && room.faculty?.id !== faculty_id) isMatch = false;
+      //     if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && room.faculty.id !== admin.faculty.id) isMatch = false;
+      //     return isMatch;
+      //   });
+      // };
 
-    // const filterRooms = (rooms) => {
-    //   return rooms.filter(room => {
-    //     let isMatch = true;
-    //     if (search && !room.name.includes(search)) isMatch = false;
-    //     if (capacityTo && room.capacity > capacityTo) isMatch = false;
-    //     if (capacityFrom && room.capacity < capacityFrom) isMatch = false;
-    //     if (floor && room.floor !== floor) isMatch = false;
-    //     if (faculty_id && room.faculty?.id !== faculty_id) isMatch = false;
-    //     if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && room.faculty.id !== admin.faculty.id) isMatch = false;
-    //     return isMatch;
-    //   });
-    // };
+      // if (allCachedRooms) {
+      //   const filteredRooms = filterRooms(allCachedRooms);
+      //   const totalCount = filteredRooms.length;
+      //   const paginatedRooms = filteredRooms.slice((page - 1) * limit, page * limit);
 
-    // if (allCachedRooms) {
-    //   const filteredRooms = filterRooms(allCachedRooms);
-    //   const totalCount = filteredRooms.length;
-    //   const paginatedRooms = filteredRooms.slice((page - 1) * limit, page * limit);
+      //   return {
+      //     statusCode: HttpStatus.OK,
+      //     success: true,
+      //     cached: true,
+      //     message: 'success',
+      //     data: {
+      //       currentPage: page,
+      //       currentCount: limit,
+      //       totalCount: totalCount,
+      //       totalPages: Math.ceil(totalCount / limit),
+      //       items: paginatedRooms,
+      //     },
+      //   };
+      // }
 
-    //   return {
-    //     statusCode: HttpStatus.OK,
-    //     success: true,
-    //     cached: true,
-    //     message: 'success',
-    //     data: {
-    //       currentPage: page,
-    //       currentCount: limit,
-    //       totalCount: totalCount,
-    //       totalPages: Math.ceil(totalCount / limit),
-    //       items: paginatedRooms,
-    //     },
-    //   };
-    // }
+      // let allRooms = await qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name']).getMany()
+      // this.cacheManager.set("allRooms", allRooms)
+      ///////////////////// CACHE END ////////////////////////////////////
 
-    // let allRooms = await qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name']).getMany()
-    // this.cacheManager.set("allRooms", allRooms)
- ///////////////////// CACHE END ////////////////////////////////////
-
-      let qb = this.roomRepo.createQueryBuilder('r')
+      let qb = this.roomRepo.createQueryBuilder('r');
 
       if (admin.role?.name === rolesName.super_admin) {
-        qb.innerJoin('r.faculty', 'f').select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
+        qb.innerJoin('r.faculty', 'f').select([
+          'r.id',
+          'r.name',
+          'r.capacity',
+          'r.floor',
+          'f.id',
+          'f.name',
+        ]);
 
-          if(faculty_id){
-            qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
-          }
+        if (faculty_id) {
+          qb.andWhere('f.id = :facultyId', { facultyId: faculty_id });
+        }
       } else {
         if (!admin.faculty) {
           throw new HttpException(
@@ -146,11 +152,13 @@ export class RoomsService {
             HttpStatus.FORBIDDEN,
           );
         }
-        qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor'])
-          .andWhere('r.faculty_id = :id', { id: admin.faculty?.id })
+        qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor']).andWhere(
+          'r.faculty_id = :id',
+          { id: admin.faculty?.id },
+        );
       }
 
-      if(search){
+      if (search) {
         qb.andWhere('r.name ILike :search', {
           search: `%${search}%`,
         });
@@ -168,12 +176,17 @@ export class RoomsService {
         qb.andWhere('r.capacity <= :capacityTo', { capacityTo });
       }
 
-      if(time_id && day){
-        qb.leftJoinAndSelect('r.schedules', 'schedule', 'schedule.time_id = :time_id AND schedule.day = :day', { time_id, day })
-        .leftJoinAndSelect('schedule.group', 'group')
-        .leftJoinAndSelect('group.course', 'course')
-        .leftJoinAndSelect('schedule.teacher', 'teacher')
-        .leftJoinAndSelect('schedule.science', 'science')
+      if (time_id && day) {
+        qb.leftJoinAndSelect(
+          'r.schedules',
+          'schedule',
+          'schedule.time_id = :time_id AND schedule.day = :day',
+          { time_id, day },
+        )
+          .leftJoinAndSelect('schedule.group', 'group')
+          .leftJoinAndSelect('group.course', 'course')
+          .leftJoinAndSelect('schedule.teacher', 'teacher')
+          .leftJoinAndSelect('schedule.science', 'science');
       }
 
       let [rooms, count] = await qb
@@ -181,37 +194,60 @@ export class RoomsService {
         .limit(limit)
         .getManyAndCount();
 
-      let roomsWithStatistics: any[] = rooms.map(el => {
-         let allStudentCount = el.schedules.reduce((a, b) => a+b.group.student_count, 0)
-         el['status'] = allStudentCount >= el.capacity ? 'danger' : allStudentCount > 0 ? 'warning': 'success';
-         el['empty_seat'] = el.capacity - allStudentCount
-         el['schedule'] = el.schedules.map(el => {
-          return {
-            id: el.id,
-            group: {
-              id: el.group?.id,
-              name: el.group?.name,
-              student_count: el.group?.student_count,
-              course: {
-                id: el.group?.course?.id,
-                name: el.group?.course?.name
-              }
-            },
-            teacher: {
-              id: el.teacher?.id,
-              name: el.teacher?.name,
-              surname: el.teacher?.surname,
-              degree: el.teacher?.degree,
-            },
-            science: {
-              id: el.science?.id,
-              name: el.science?.name
-            }
-          }
-         })
-         delete el.schedules
-         return el
-      })
+      if (time_id && day) {
+        let roomsWithStatistics: any[] = rooms.map((el) => {
+          let allStudentCount = el.schedules.reduce(
+            (a, b) => a + b.group.student_count,
+            0,
+          );
+          el['status'] =
+            allStudentCount >= el.capacity
+              ? 'danger'
+              : allStudentCount > 0
+              ? 'warning'
+              : 'success';
+          el['empty_seat'] = el.capacity - allStudentCount;
+          el['schedule'] = el.schedules.map((el) => {
+            return {
+              id: el.id,
+              group: {
+                id: el.group?.id,
+                name: el.group?.name,
+                student_count: el.group?.student_count,
+                course: {
+                  id: el.group?.course?.id,
+                  name: el.group?.course?.name,
+                },
+              },
+              teacher: {
+                id: el.teacher?.id,
+                name: el.teacher?.name,
+                surname: el.teacher?.surname,
+                degree: el.teacher?.degree,
+              },
+              science: {
+                id: el.science?.id,
+                name: el.science?.name,
+              },
+            };
+          });
+          delete el.schedules;
+          return el;
+        });
+
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          message: 'success',
+          data: {
+            currentPage: page,
+            currentCount: limit,
+            totalCount: count,
+            totalPages: Math.ceil(count / limit),
+            items: roomsWithStatistics,
+          },
+        };
+      }
 
       return {
         statusCode: HttpStatus.OK,
@@ -222,7 +258,7 @@ export class RoomsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: roomsWithStatistics,
+          items: rooms,
         },
       };
     } catch (error) {
@@ -308,12 +344,20 @@ export class RoomsService {
         );
       }
 
-
-      let checkDuplicate = await this.roomRepo.createQueryBuilder('r')
-      .innerJoin('r.faculty', 'f')
-      .where('r.id != :roomId AND r.name = :name AND r.capacity = :capacity AND r.floor = :floor AND f.id = :facultyId',
-       {roomId: room.id ,name: body.name, capacity: body.capacity || room.capacity, floor: body.floor || room.floor, facultyId: admin.faculty?.id })
-      .getOne()
+      let checkDuplicate = await this.roomRepo
+        .createQueryBuilder('r')
+        .innerJoin('r.faculty', 'f')
+        .where(
+          'r.id != :roomId AND r.name = :name AND r.capacity = :capacity AND r.floor = :floor AND f.id = :facultyId',
+          {
+            roomId: room.id,
+            name: body.name,
+            capacity: body.capacity || room.capacity,
+            floor: body.floor || room.floor,
+            facultyId: admin.faculty?.id,
+          },
+        )
+        .getOne();
 
       if (checkDuplicate) {
         throw new HttpException(
@@ -322,12 +366,12 @@ export class RoomsService {
         );
       }
 
-      room.name = body.name || room.name
-      room.floor = body.floor || room.floor
-      room.capacity = body.capacity || room.capacity
-      room.updated_at = new Date()
+      room.name = body.name || room.name;
+      room.floor = body.floor || room.floor;
+      room.capacity = body.capacity || room.capacity;
+      room.updated_at = new Date();
 
-      await this.roomRepo.save(room)
+      await this.roomRepo.save(room);
       return {
         success: true,
         message: 'Yangilandi',
@@ -357,7 +401,7 @@ export class RoomsService {
       }
 
       let room = await this.roomRepo.findOne({
-        where: { id, faculty: {id: admin.faculty.id}}
+        where: { id, faculty: { id: admin.faculty.id } },
       });
 
       if (room) {
@@ -368,10 +412,7 @@ export class RoomsService {
           message: "O'chirildi",
         };
       } else {
-        throw new HttpException(
-          "Bunday xona yo'q",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new HttpException("Bunday xona yo'q", HttpStatus.NOT_FOUND);
       }
     } catch (error) {
       throw new HttpException(
