@@ -4,6 +4,10 @@ export class FindAllQueryDto {
     @IsString()
     search?: string;
 
+    @IsUUID()
+    @IsOptional()
+    readonly education_id: string;
+
     @IsOptional()
     @IsUUID()
     faculty_id?: string;

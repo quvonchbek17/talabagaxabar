@@ -20,6 +20,13 @@ export class Teacher extends BaseModel {
     })
     surname: string;
 
+    @Column({
+        name: 'degree',
+        type: 'varchar',
+        nullable: true,
+    })
+    degree: string;
+
     @ManyToOne(type => Department, department => department.teachers)
     @JoinColumn({name: "department_id"})
     department: Department;

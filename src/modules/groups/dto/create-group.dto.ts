@@ -1,9 +1,12 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString, IsUUID } from "class-validator";
 
 export class CreateGroupDto {
     @IsString()
     @IsNotEmpty()
     readonly name: string;
+
+    @IsNumber()
+    readonly student_count: number;
 
     @IsUUID()
     @IsString()

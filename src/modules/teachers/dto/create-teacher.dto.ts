@@ -9,6 +9,10 @@ export class CreateTeacherDto {
     @IsNotEmpty()
     readonly surname: string;
 
+    @IsString()
+    @IsNotEmpty()
+    readonly degree: string;
+
     @IsUUID()
     readonly department_id: string;
 

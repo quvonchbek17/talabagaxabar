@@ -37,6 +37,7 @@ export class GroupsService {
       let checkDuplicate = await this.groupRepo.findOne({
         where: {
           name: body.name,
+          student_count: body.student_count,
           faculty: { id: admin.faculty?.id },
           direction: { id: body.direction_id },
           course: { id: body.course_id },
@@ -86,6 +87,7 @@ export class GroupsService {
 
       let group = this.groupRepo.create({
         name: body.name,
+        student_count: body.student_count,
         direction,
         education,
         course,
@@ -138,7 +140,7 @@ export class GroupsService {
 
       if (admin.role?.name === rolesName.super_admin) {
         qb.innerJoin('g.faculty', 'f')
-        .select(['g.id', 'g.name', 'f.id', 'f.name', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
+        .select(['g.id', 'g.name', 'g.student_count', 'f.id', 'f.name', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
 
         if(faculty_id){
           qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
@@ -151,7 +153,7 @@ export class GroupsService {
           );
         }
 
-        qb.select(['g.id', 'g.name', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
+        qb.select(['g.id', 'g.name', 'g.student_count', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
         .andWhere('g.faculty_id = :id', { id: admin.faculty?.id })
       }
 
@@ -297,8 +299,8 @@ export class GroupsService {
       .leftJoinAndSelect('g.direction', 'd')
       .leftJoinAndSelect('g.course', 'c')
       .leftJoinAndSelect('g.education', 'e')
-      .where('g.id != :groupId AND g.name = :name AND d.id = :directionId AND c.id = :courseId AND e.id = :educationId  AND f.id = :facultyId',
-       {groupId: group.id ,name: body.name, directionId: body.direction_id || group.direction?.id, educationId:body.education_id || group.education?.id, courseId: body.course_id || group.course?.id, facultyId: admin.faculty?.id })
+      .where('g.id != :groupId AND g.name = :name AND g.student_count = :student_count AND d.id = :directionId AND c.id = :courseId AND e.id = :educationId  AND f.id = :facultyId',
+       {groupId: group.id ,name: body.name, student_count: body.student_count, directionId: body.direction_id || group.direction?.id, educationId:body.education_id || group.education?.id, courseId: body.course_id || group.course?.id, facultyId: admin.faculty?.id })
       .getOne()
 
       if (checkDuplicate) {
@@ -309,6 +311,7 @@ export class GroupsService {
       }
 
       group.name = body.name || group.name
+      group.student_count = body.student_count || group.student_count
       group.direction = direction || group.direction
       group.course = course || group.course
       group.education = education || group.education

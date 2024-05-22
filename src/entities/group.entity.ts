@@ -12,9 +12,17 @@ export class Group extends BaseModel {
 
     @Column({
         name: 'name',
-        type: 'varchar'
+        type: 'varchar',
+        nullable: true,
     })
     name: string;
+
+    @Column({
+        name: 'student_count',
+        type: 'int',
+        nullable: true
+    })
+    student_count: number;
 
     @ManyToOne(type => Direction, direction => direction.groups)
     @JoinColumn({name: "direction_id"})

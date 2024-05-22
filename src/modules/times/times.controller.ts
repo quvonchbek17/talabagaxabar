@@ -30,11 +30,11 @@ export class TimesController {
     @Query() allquery: FindAllQueryDto,
   ) {
     try {
-      const {search, faculty_id} = allquery
-      if (search || faculty_id || page || limit) {
-        return this.timesService.get(search, faculty_id, page, limit, req.user.id);
+      const {search, education_id, faculty_id} = allquery
+      if (search || education_id || faculty_id || page || limit) {
+        return this.timesService.get(search, education_id, faculty_id, page, limit, req.user.id);
       } else if (Object.keys(allquery).length === 0) {
-        return this.timesService.get('', '', 0, 0, req.user.id);
+        return this.timesService.get('', '', '', 0, 0, req.user.id);
       } else {
         throw new HttpException(
           "Bunday so'rov mavjud emas",

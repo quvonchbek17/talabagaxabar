@@ -30,5 +30,4 @@ export class Room extends BaseModel {
 
     @OneToMany(type => Schedule, schedule => schedule.room)
     schedules: Schedule[];
-
 }

@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateRoomDto, UpdateRoomDto } from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin, Room } from '@entities';
+import { Admin, Room, Schedule } from '@entities';
 import { rolesName } from '@common';
 import { Cache } from 'cache-manager';
 
@@ -11,6 +11,8 @@ export class RoomsService {
   constructor(
     @InjectRepository(Room)
     private readonly roomRepo: Repository<Room>,
+    @InjectRepository(Schedule)
+    private readonly scheduleRepo: Repository<Schedule>,
     @InjectRepository(Admin)
     private readonly adminRepo: Repository<Admin>,
     @Inject('CACHE_MANAGER')
@@ -69,6 +71,8 @@ export class RoomsService {
 
   async get(
     search: string,
+    time_id: string,
+    day: string,
     faculty_id: string,
     capacityTo: number,
     capacityFrom: number,
@@ -122,15 +126,15 @@ export class RoomsService {
     //     },
     //   };
     // }
+
+    // let allRooms = await qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name']).getMany()
+    // this.cacheManager.set("allRooms", allRooms)
  ///////////////////// CACHE END ////////////////////////////////////
 
       let qb = this.roomRepo.createQueryBuilder('r')
-      .innerJoin('r.faculty', 'f')
 
-      let allRooms = await qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name']).getMany()
-      this.cacheManager.set("allRooms", allRooms)
       if (admin.role?.name === rolesName.super_admin) {
-        qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
+        qb.innerJoin('r.faculty', 'f').select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name'])
 
           if(faculty_id){
             qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
@@ -164,10 +168,50 @@ export class RoomsService {
         qb.andWhere('r.capacity <= :capacityTo', { capacityTo });
       }
 
+      if(time_id && day){
+        qb.leftJoinAndSelect('r.schedules', 'schedule', 'schedule.time_id = :time_id AND schedule.day = :day', { time_id, day })
+        .leftJoinAndSelect('schedule.group', 'group')
+        .leftJoinAndSelect('group.course', 'course')
+        .leftJoinAndSelect('schedule.teacher', 'teacher')
+        .leftJoinAndSelect('schedule.science', 'science')
+      }
+
       let [rooms, count] = await qb
         .offset((page - 1) * limit)
         .limit(limit)
         .getManyAndCount();
+
+      let roomsWithStatistics: any[] = rooms.map(el => {
+         let allStudentCount = el.schedules.reduce((a, b) => a+b.group.student_count, 0)
+         el['status'] = allStudentCount >= el.capacity ? 'danger' : allStudentCount > 0 ? 'warning': 'success';
+         el['empty_seat'] = el.capacity - allStudentCount
+         el['schedule'] = el.schedules.map(el => {
+          return {
+            id: el.id,
+            group: {
+              id: el.group?.id,
+              name: el.group?.name,
+              student_count: el.group?.student_count,
+              course: {
+                id: el.group?.course?.id,
+                name: el.group?.course?.name
+              }
+            },
+            teacher: {
+              id: el.teacher?.id,
+              name: el.teacher?.name,
+              surname: el.teacher?.surname,
+              degree: el.teacher?.degree,
+            },
+            science: {
+              id: el.science?.id,
+              name: el.science?.name
+            }
+          }
+         })
+         delete el.schedules
+         return el
+      })
 
       return {
         statusCode: HttpStatus.OK,
@@ -178,7 +222,7 @@ export class RoomsService {
           currentCount: limit,
           totalCount: count,
           totalPages: Math.ceil(count / limit),
-          items: rooms,
+          items: roomsWithStatistics,
         },
       };
     } catch (error) {

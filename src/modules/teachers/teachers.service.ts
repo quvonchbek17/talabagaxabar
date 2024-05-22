@@ -36,6 +36,7 @@ export class TeachersService {
         where: {
           name: body.name,
           surname: body.surname,
+          degree: body.degree,
           department: { id: body.department_id },
           faculty: { id: admin.faculty.id },
         },
@@ -74,6 +75,7 @@ export class TeachersService {
       let teacher = this.teacherRepo.create({
         name: body.name,
         surname: body.surname,
+        degree: body.degree,
         department: department,
         sciences: existingSciences,
         faculty: admin.faculty,
@@ -114,7 +116,7 @@ export class TeachersService {
       .leftJoinAndSelect('t.sciences', 's')
 
       if(search){
-        qb.andWhere('t.name ILike :search OR t.surname ILike :search', {
+        qb.andWhere('t.name ILike :search OR t.surname ILike :search OR t.degree ILike :search', {
           search: `%${search}%`,
         })
       }
@@ -129,7 +131,7 @@ export class TeachersService {
 
       if (admin.role?.name === rolesName.super_admin) {
           qb.leftJoinAndSelect('t.faculty', 'f')
-          .select(['t.id','t.name','t.surname','f.id','f.name','d.id','d.name','s.id','s.name',])
+          .select(['t.id','t.name','t.surname', 't.degree','f.id','f.name','d.id','d.name','s.id','s.name',])
 
           if(faculty_id){
             qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
@@ -142,7 +144,7 @@ export class TeachersService {
           );
         }
 
-        qb.select(['t.id','t.name','t.surname','d.id','d.name','s.id','s.name',])
+        qb.select(['t.id','t.name','t.surname', 't.degree','d.id','d.name','s.id','s.name',])
         .andWhere('t.faculty_id = :id', { id: admin.faculty?.id })
       }
 
@@ -259,8 +261,8 @@ export class TeachersService {
       let checkDuplicate = await this.teacherRepo.createQueryBuilder('t')
       .innerJoin('t.department', 'd')
       .innerJoin('t.faculty', 'f')
-      .where('t.id != :teacherId AND t.name = :name AND t.surname = :surname AND d.id = :departmentId AND f.id = :facultyId',
-       {teacherId: teacher.id ,name: body.name, surname: body.surname, departmentId: body.department_id ? body.department_id : teacher.department?.id, facultyId: admin.faculty?.id })
+      .where('t.id != :teacherId AND t.name = :name AND t.surname = :surname AND t.degree = :degree AND d.id = :departmentId AND f.id = :facultyId',
+       {teacherId: teacher.id ,name: body.name, surname: body.surname, degree: body.degree, departmentId: body.department_id ? body.department_id : teacher.department?.id, facultyId: admin.faculty?.id })
       .getOne()
 
       if (checkDuplicate) {
@@ -272,19 +274,20 @@ export class TeachersService {
 
       let {nonExistingScienceIds, existingSciences } =
         await this.checkExistingSciences(body?.sciences);
-      if (nonExistingScienceIds.length > 0) {
+      if (nonExistingScienceIds?.length > 0) {
         throw new HttpException(
           `${nonExistingScienceIds.join(', ')} idlik fanlar mavjud emas`,
           HttpStatus.BAD_REQUEST,
         );
       }
 
-      if (existingSciences.length > 0) {
+      if (existingSciences?.length > 0) {
         teacher.sciences = existingSciences;
       }
 
       teacher.name = body.name || teacher.name;
       teacher.surname = body.surname || teacher.surname;
+      teacher.degree = body.degree || teacher.degree;
       teacher.department = department || teacher.department;
       teacher.updated_at = new Date();
 
@@ -344,9 +347,12 @@ export class TeachersService {
 
   async checkExistingSciences(
     scienceIds: string[],
-  ): Promise<{ nonExistingScienceIds: string[]; existingSciences: Science[] }> {
+  ) {
     const nonExistingScienceIds: string[] = [];
     const existingSciences: Science[] = [];
+    if(!scienceIds){
+      return {}
+    }
     for (const scienceId of scienceIds) {
       const science = await this.scienceRepo.findOne({
         where: { id: scienceId },

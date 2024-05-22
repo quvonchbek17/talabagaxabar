@@ -21,11 +21,11 @@ export class RoomsController {
   @Get()
   async findAll(@Req() req: Request, @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number, @Query('limit', new DefaultValuePipe(0), ParseIntPipe) limit: number, @Query('capacityTo', new DefaultValuePipe(0), ParseIntPipe) capacityTo: number, @Query('capacityFrom', new DefaultValuePipe(0), ParseIntPipe) capacityFrom: number, @Query('floor', new DefaultValuePipe(0), ParseIntPipe) floor: number,  @Query() allquery: FindAllQueryDto) {
        try {
-        const {search, faculty_id} = allquery
-        if (search ||  faculty_id || capacityTo || capacityFrom || floor || page || limit) {
-          return this.roomsService.get(search,faculty_id, capacityTo, capacityFrom, floor, page, limit, req.user.id);
+        const {search, time_id, day, faculty_id} = allquery
+        if (search || time_id || day ||  faculty_id || capacityTo || capacityFrom || floor || page || limit) {
+          return this.roomsService.get(search, time_id, day, faculty_id, capacityTo, capacityFrom, floor, page, limit, req.user.id);
         } else if(Object.keys(allquery).length === 0) {
-          return this.roomsService.get("", "", 0, 0, 0, 0, 0, req.user.id);
+          return this.roomsService.get("", "", "", "",  0, 0, 0, 0, 0, req.user.id);
         } else {
           throw new HttpException("Bunday so'rov mavjud emas", HttpStatus.NOT_FOUND)
         }
