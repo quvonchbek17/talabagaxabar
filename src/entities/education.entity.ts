@@ -17,9 +17,6 @@ export class Education extends BaseModel {
     @JoinColumn({name: "faculty_id"})
     faculty: Faculty;
 
-    @OneToMany(type => Time, time => time.education)
-    times: Time[];
-
     @OneToMany(type => Group, group => group.education)
     groups: Group[];
 }

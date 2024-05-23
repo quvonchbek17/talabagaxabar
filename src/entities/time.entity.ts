@@ -1,8 +1,9 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany, ManyToMany } from 'typeorm'
 import { BaseModel } from './model.entity';
 import { Faculty } from './faculty.entity';
 import { Schedule } from './schedule.entity';
 import { Education } from './education.entity';
+import { Group } from './group.entity';
 
 @Entity("times")
 export class Time extends BaseModel {
@@ -13,13 +14,12 @@ export class Time extends BaseModel {
     })
     name: string;
 
-    @ManyToOne(type => Education, education => education.times)
-    @JoinColumn({name:"education_id"})
-    education: Education
-
     @ManyToOne(type => Faculty, faculty => faculty.directions)
     @JoinColumn({name:"faculty_id"})
     faculty: Faculty
+
+    @ManyToMany(type => Group, group => group.times, {onDelete: "SET NULL"})
+    groups?: Group[];
 
 
     @OneToMany(type => Schedule, schedule => schedule.time)

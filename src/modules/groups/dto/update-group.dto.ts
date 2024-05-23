@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class UpdateGroupDto {
     @IsString()
@@ -7,6 +7,7 @@ export class UpdateGroupDto {
     readonly name: string;
 
     @IsNumber()
+    @IsOptional()
     readonly student_count: number;
 
     @IsUUID()
@@ -23,4 +24,9 @@ export class UpdateGroupDto {
     @IsString()
     @IsOptional()
     readonly course_id: string;
+
+    @IsArray()
+    @IsUUID(undefined, { each: true })
+    @IsOptional()
+    readonly times: string[];
 }

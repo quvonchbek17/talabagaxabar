@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, IsUUID } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsString, IsUUID } from "class-validator";
 
 export class CreateGroupDto {
     @IsString()
@@ -19,4 +19,8 @@ export class CreateGroupDto {
     @IsUUID()
     @IsString()
     readonly course_id: string;
+
+    @IsArray()
+    @IsUUID(undefined, { each: true })
+    readonly times: string[];
 }

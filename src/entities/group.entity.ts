@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from 'typeorm'
 import { BaseModel } from './model.entity';
 import { Direction } from './direction.entity';
 import { Education } from './education.entity';
@@ -6,6 +6,7 @@ import { Course } from './course.entity';
 import { BotUser } from './botuser.entity';
 import { Faculty } from './faculty.entity';
 import { Schedule } from './schedule.entity';
+import { Time } from './time.entity';
 
 @Entity("groups")
 export class Group extends BaseModel {
@@ -42,6 +43,10 @@ export class Group extends BaseModel {
 
     @OneToMany(type => Schedule, schedule => schedule.group)
     schedules: Schedule[];
+
+    @ManyToMany(type => Time, time => time.groups, {onDelete: "SET NULL"})
+    @JoinTable()
+    times?: Time[];
 
     @OneToMany(type => BotUser, user => user.group)
     users: BotUser[];

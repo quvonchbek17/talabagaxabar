@@ -3,13 +3,13 @@ import { GroupsService } from './groups.service';
 import { GroupsController } from './groups.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Admin, Course, Direction, Education, Group } from '@entities';
+import { Admin, Course, Direction, Education, Group, Time } from '@entities';
 import { AuthService } from '../auth';
 
 @Module({
   imports: [
      JwtModule,
-     TypeOrmModule.forFeature([Group, Admin, Direction, Course, Education])
+     TypeOrmModule.forFeature([Group, Admin, Direction, Course, Education, Time])
   ],
   controllers: [GroupsController],
   providers: [GroupsService, AuthService]

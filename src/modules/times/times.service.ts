@@ -12,8 +12,6 @@ export class TimesService {
   constructor(
     @InjectRepository(Time)
     private readonly timeRepo: Repository<Time>,
-    @InjectRepository(Education)
-    private readonly educationRepo: Repository<Education>,
     @InjectRepository(Admin)
     private readonly adminRepo: Repository<Admin>,
   ) {}
@@ -32,16 +30,8 @@ export class TimesService {
         );
       }
 
-      let education = await this.educationRepo.findOne({
-        where: { id: body.education_id, faculty: {id: admin.faculty?.id} }
-      });
-
-      if(!education){
-        throw new HttpException("Bu idlik ta'lim turi mavjud emas", HttpStatus.NOT_FOUND);
-      }
-
       let checkDuplicate = await this.timeRepo.findOne({
-        where: { name: body.name, education: {id: body.education_id}, faculty: { id: admin.faculty?.id } },
+        where: { name: body.name,  faculty: { id: admin.faculty?.id } },
       });
 
       if (checkDuplicate) {
@@ -50,7 +40,6 @@ export class TimesService {
 
       let time = this.timeRepo.create({
         name: body.name,
-        education,
         faculty: admin.faculty,
       });
       await time.save();
@@ -70,7 +59,6 @@ export class TimesService {
 
   async get(
     search: string,
-    education_id: string,
     faculty_id: string,
     page: number,
     limit: number,
@@ -86,14 +74,11 @@ export class TimesService {
       });
 
       let qb = this.timeRepo.createQueryBuilder('t')
-      .leftJoinAndSelect("t.education", "e")
 
       if (admin.role?.name === rolesName.super_admin) {
         qb.innerJoin('t.faculty', 'f').select([
           't.id',
           't.name',
-          'e.id',
-          'e.name',
           'f.id',
           'f.name',
         ]);
@@ -109,17 +94,13 @@ export class TimesService {
           );
         }
 
-        qb.select(['t.id', 't.name', 'e.id', 'e.name']).andWhere('t.faculty_id = :id', {
+        qb.select(['t.id', 't.name']).andWhere('t.faculty_id = :id', {
           id: admin.faculty?.id,
         });
       }
 
       if (search) {
         qb.andWhere('t.name ILike :search', { search: `%${search}%` });
-      }
-
-      if (education_id) {
-        qb.andWhere('e.id = :education_id', { education_id });
       }
 
       let [times, count] = await qb
@@ -156,7 +137,7 @@ export class TimesService {
       if (admin.role?.name === rolesName.super_admin) {
         let time = await this.timeRepo.findOne({
           where: { id },
-          relations: { faculty: true, education: true },
+          relations: { faculty: true},
         });
         return {
           statusCode: HttpStatus.OK,
@@ -172,8 +153,7 @@ export class TimesService {
         );
       }
       let time = await this.timeRepo.findOne({
-        where: { id, faculty: { id: admin.faculty?.id} },
-        relations: {education: true}
+        where: { id, faculty: { id: admin.faculty?.id} }
       });
       if (time) {
         return {
@@ -211,7 +191,7 @@ export class TimesService {
 
       let time = await this.timeRepo.findOne({
         where: { id, faculty: { id: admin.faculty?.id } },
-        relations: { faculty: true, education: true },
+        relations: { faculty: true},
       });
 
       if (!time) {
@@ -221,22 +201,13 @@ export class TimesService {
         );
       }
 
-      let education = await this.educationRepo.findOne({
-        where: { id: body.education_id, faculty: {id: admin.faculty?.id} }
-      });
-
-      if(!education && body.education_id){
-        throw new HttpException("Bu idlik ta'lim turi mavjud emas", HttpStatus.NOT_FOUND);
-      }
-
       let checkDuplicate = await this.timeRepo
         .createQueryBuilder('t')
         .innerJoin('t.faculty', 'f')
         .leftJoinAndSelect('t.education', 'e')
-        .where('t.id != :timeId AND e.id != :education_id AND t.name = :name AND f.id = :facultyId', {
+        .where('t.id != :timeId AND t.name = :name AND f.id = :facultyId', {
           timeId: time.id,
           name: body.name,
-          education_id: body.education_id || time.education?.id,
           facultyId: admin.faculty?.id,
         })
         .getOne();
@@ -249,14 +220,13 @@ export class TimesService {
       }
       await this.timeRepo.update(id, {
         name: body.name || time.name,
-        education: education || time.education,
         updated_at: new Date(),
       });
       return {
         success: true,
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
-        data: await this.timeRepo.findOne({ where: { id }, relations: {education: true} }),
+        data: await this.timeRepo.findOne({ where: { id } }),
       };
     } catch (error) {
       throw new HttpException(

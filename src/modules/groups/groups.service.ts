@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateGroupDto, UpdateGroupDto } from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Admin, Course, Direction, Education, Group } from '@entities';
+import { Admin, Course, Direction, Education, Group, Time } from '@entities';
 import { Repository } from 'typeorm';
 import { rolesName } from '@common';
 
@@ -18,6 +18,8 @@ export class GroupsService {
     private readonly courseRepo: Repository<Course>,
     @InjectRepository(Education)
     private readonly educationRepo: Repository<Education>,
+    @InjectRepository(Time)
+    private readonly timeRepo: Repository<Time>,
   ) {}
 
   async create(body: CreateGroupDto, adminId: string) {
@@ -85,12 +87,22 @@ export class GroupsService {
         );
       }
 
+      let { nonExistingTimeIds, existingTimes } =
+      await this.checkExistingTimes(body?.times);
+    if (nonExistingTimeIds.length > 0) {
+      throw new HttpException(
+        `${nonExistingTimeIds.join(', ')} idlik vaqtlar mavjud emas`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
       let group = this.groupRepo.create({
         name: body.name,
         student_count: body.student_count,
         direction,
         education,
         course,
+        times: existingTimes,
         faculty: admin.faculty,
       });
       await group.save();
@@ -122,6 +134,7 @@ export class GroupsService {
       .leftJoinAndSelect('g.course', 'c')
       .leftJoinAndSelect('g.direction', 'd')
       .leftJoinAndSelect('g.education', 'e')
+      .leftJoinAndSelect('g.times', 't')
       if(search){
         qb.andWhere('g.name ILike :search', { search: `%${search}%` })
       }
@@ -140,7 +153,7 @@ export class GroupsService {
 
       if (admin.role?.name === rolesName.super_admin) {
         qb.innerJoin('g.faculty', 'f')
-        .select(['g.id', 'g.name', 'g.student_count', 'f.id', 'f.name', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
+        .select(['g.id', 'g.name', 'g.student_count', 'f.id', 'f.name', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name', 't.id', 't.name'])
 
         if(faculty_id){
           qb.andWhere('f.id = :facultyId', { facultyId: faculty_id })
@@ -153,7 +166,7 @@ export class GroupsService {
           );
         }
 
-        qb.select(['g.id', 'g.name', 'g.student_count', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name'])
+        qb.select(['g.id', 'g.name', 'g.student_count', 'c.id', 'c.name', 'd.id', 'd.name', 'e.id', 'e.name', 't.id', 't.name'])
         .andWhere('g.faculty_id = :id', { id: admin.faculty?.id })
       }
 
@@ -192,7 +205,7 @@ export class GroupsService {
       if (admin.role?.name === rolesName.super_admin) {
         let group = await this.groupRepo.findOne({
           where: { id },
-          relations: { faculty: true, direction: true, course: true, education: true },
+          relations: { faculty: true, direction: true, course: true, education: true, times: true },
         });
         return {
           statusCode: HttpStatus.OK,
@@ -209,7 +222,7 @@ export class GroupsService {
       }
       let group = await this.groupRepo.findOne({
         where: { id, faculty: { id: admin.faculty.id } },
-        relations: {direction: true, course: true, education: true}
+        relations: {direction: true, course: true, education: true, times: true}
       });
       if (group) {
         return {
@@ -310,6 +323,19 @@ export class GroupsService {
         );
       }
 
+    let { nonExistingTimeIds, existingTimes } =
+      await this.checkExistingTimes(body?.times);
+    if (nonExistingTimeIds.length > 0) {
+      throw new HttpException(
+        `${nonExistingTimeIds.join(', ')} idlik vaqtlar mavjud emas`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (existingTimes?.length > 0) {
+      group.times = existingTimes;
+    }
+
       group.name = body.name || group.name
       group.student_count = body.student_count || group.student_count
       group.direction = direction || group.direction
@@ -322,7 +348,7 @@ export class GroupsService {
         success: true,
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
-        data: await this.groupRepo.findOne({ where: { id }, relations: {direction: true, course:true, education: true} }),
+        data: await this.groupRepo.findOne({ where: { id }, relations: {direction: true, course:true, education: true, times: true} }),
       };
     } catch (error) {
       throw new HttpException(
@@ -369,5 +395,26 @@ export class GroupsService {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  async checkExistingTimes(
+    timeIds: string[],
+  ) {
+    const nonExistingTimeIds: string[] = [];
+    const existingTimes: Time[] = [];
+    if(!timeIds){
+      return {}
+    }
+    for (const timeId of timeIds) {
+      const time = await this.timeRepo.findOne({
+        where: { id: timeId },
+      });
+      if (!time) {
+        nonExistingTimeIds.push(timeId);
+      } else {
+        existingTimes.push(time);
+      }
+    }
+    return { nonExistingTimeIds, existingTimes };
   }
 }
