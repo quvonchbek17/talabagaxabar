@@ -204,7 +204,6 @@ export class TimesService {
       let checkDuplicate = await this.timeRepo
         .createQueryBuilder('t')
         .innerJoin('t.faculty', 'f')
-        .leftJoinAndSelect('t.education', 'e')
         .where('t.id != :timeId AND t.name = :name AND f.id = :facultyId', {
           timeId: time.id,
           name: body.name,
