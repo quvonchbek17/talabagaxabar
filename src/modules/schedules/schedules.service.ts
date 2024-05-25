@@ -495,7 +495,7 @@ export class SchedulesService {
         where: { id: body.time_id, faculty: { id: admin.faculty?.id } },
       });
 
-      if (!time) {
+      if (!time && body.time_id) {
         throw new HttpException('Bu vaqt mavjud emas', HttpStatus.NOT_FOUND);
       }
       //////// Teacher ////////////
@@ -537,58 +537,60 @@ export class SchedulesService {
         );
       }
       ///////// Groups Time ////////////
-      let busyGroups = [];
-      if (body.time_id && body.groups?.length > 0) {
-        for (let group_id of body.groups) {
-          let checkDuplicate = await this.scheduleRepo.findOne({
-            where: {
-              id: Not(schedule.id),
-              day: body.day || schedule.day,
-              faculty: { id: admin.faculty?.id },
-              group: { id: group_id },
-              time: { id: body.time_id || schedule.time?.id },
-            },
-            relations: { group: true, time: true },
-          });
+      // let busyGroups = [];
 
-          if (checkDuplicate) {
-            busyGroups.push(checkDuplicate.group?.name);
-          }
-        }
-      } else if (body.time_id || body.day) {
-        let checkDuplicate = await this.scheduleRepo.findOne({
-          where: {
-            id: Not(schedule.id),
-            day: body.day || schedule.day,
-            faculty: { id: admin.faculty?.id },
-            group: { id: schedule.group.id },
-            time: { id: body.time_id || schedule.time?.id },
-          },
-          relations: { group: true, time: true },
-        });
+      // let checkTime = body.time_id || schedule.time?.id
+      // if (checkTime && body.groups?.length > 0) {
+      //   for (let group_id of body.groups) {
+      //     let checkDuplicate = await this.scheduleRepo.findOne({
+      //       where: {
+      //         id: Not(schedule.id),
+      //         day: body.day || schedule.day,
+      //         faculty: { id: admin.faculty?.id },
+      //         group: { id: group_id },
+      //         time: { id: checkTime },
+      //       },
+      //       relations: { group: true, time: true },
+      //     });
 
-        if (checkDuplicate) {
-          throw new HttpException(
-            `${body.day || schedule.day} soat ${
-              time.name || schedule.time?.name
-            } vaqti uchun ${
-              schedule.group.name
-            } guruhiga dars avval qo'shilgan`,
-            HttpStatus.CONFLICT,
-          );
-        }
-      }
+      //     if (checkDuplicate) {
+      //       busyGroups.push(checkDuplicate.group?.name);
+      //     }
+      //   }
+      // } else if (body.time_id || body.day) {
+      //   let checkDuplicate = await this.scheduleRepo.findOne({
+      //     where: {
+      //       id: Not(schedule.id),
+      //       day: body.day || schedule.day,
+      //       faculty: { id: admin.faculty?.id },
+      //       group: { id: schedule.group.id },
+      //       time: { id: body.time_id || schedule.time?.id },
+      //     },
+      //     relations: { group: true, time: true },
+      //   });
 
-      if (busyGroups.length > 0) {
-        throw new HttpException(
-          `${body.day || schedule.day} soat ${
-            time.name || schedule.time?.name
-          } vaqti uchun ${busyGroups.join(
-            ', ',
-          )} guruhlariga dars avval qo'shilgan`,
-          HttpStatus.CONFLICT,
-        );
-      }
+      //   if (checkDuplicate) {
+      //     throw new HttpException(
+      //       `${body.day || schedule.day} soat ${
+      //         time.name || schedule.time?.name
+      //       } vaqti uchun ${
+      //         schedule.group.name
+      //       } guruhiga dars avval qo'shilgan`,
+      //       HttpStatus.CONFLICT,
+      //     );
+      //   }
+      // }
+
+      // if (busyGroups.length > 0) {
+      //   throw new HttpException(
+      //     `${body.day || schedule.day} soat ${
+      //       time.name || schedule.time?.name
+      //     } vaqti uchun ${busyGroups.join(
+      //       ', ',
+      //     )} guruhlariga dars avval qo'shilgan`,
+      //     HttpStatus.CONFLICT,
+      //   );
+      // }
 
       if (existingGroups.length > 0) {
         let schedules = [];
@@ -692,10 +694,13 @@ export class SchedulesService {
   async checkExistingGroups(
     groupIds: string[],
     faculty_id: string,
-  ): Promise<{ nonExistingGroupIds: string[]; existingGroups: Group[] }> {
+  ) {
     const nonExistingGroupIds: string[] = [];
     const existingGroups: Group[] = [];
-    if(groupIds?.length > 0){
+    if(!groupIds?.length){
+      return {}
+    }
+
       for (const groupId of groupIds) {
         const group = await this.groupRepo.findOne({
           where: { id: groupId, faculty: { id: faculty_id } },
@@ -706,7 +711,7 @@ export class SchedulesService {
           existingGroups.push(group);
         }
       }
-    }
+
     return { nonExistingGroupIds, existingGroups };
   }
 }
