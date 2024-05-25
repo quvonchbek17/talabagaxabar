@@ -530,7 +530,7 @@ export class SchedulesService {
 
       let { nonExistingGroupIds, existingGroups } =
         await this.checkExistingGroups(body?.groups, admin.faculty?.id);
-      if (nonExistingGroupIds.length > 0) {
+      if (nonExistingGroupIds?.length > 0 && body.groups?.length > 0) {
         throw new HttpException(
           `${nonExistingGroupIds.join(', ')} idlik guruhlar mavjud emas`,
           HttpStatus.BAD_REQUEST,
@@ -592,7 +592,7 @@ export class SchedulesService {
       //   );
       // }
 
-      if (existingGroups.length > 0) {
+      if (existingGroups?.length > 0 && body.groups?.length > 0) {
         let schedules = [];
         let deleteSchedules = await this.scheduleRepo.find({
           where: {
@@ -648,6 +648,8 @@ export class SchedulesService {
         };
       }
     } catch (error) {
+      console.log(error);
+
       throw new HttpException(
         error.message,
         error.status || HttpStatus.BAD_REQUEST,
