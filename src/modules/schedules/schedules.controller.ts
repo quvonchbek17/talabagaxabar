@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import {
   Controller,
   Get,
@@ -19,7 +19,7 @@ import {
 import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard, HasRole } from '@guards';
 import { SchedulesService } from './schedules.service';
-import { CreateScheduleDto, FindAllQueryDto, ScheduleParamsIdDto, UpdateScheduleDto } from './dto';
+import { CreateScheduleDto, FindAllQueryDto, ScheduleParamsIdDto, UpdateScheduleDto, CreateSchedulePdfDto } from './dto';
 import * as fs from 'fs';
 
 
@@ -35,30 +35,31 @@ export class SchedulesController {
   }
 
 
-  // @Get('pdf')
-  // async getSchedulePdf(@Res() res: Response) {
-  //   try {
-  //     const filePath = await this.schedulesService.createSchedulePdf();
-  //     res.download(filePath, 'Schedule.pdf', (err) => {
-  //       if (err) {
-  //         res.status(500).send({
-  //           statusCode: 500,
-  //           success: false,
-  //           message: 'PDF yaratishda xatolik yuz berdi',
-  //         });
-  //       }
+  @SetRoles(rolesName.faculty_lead_admin, rolesName.faculty_admin)
+  @UseGuards(JwtAuthGuard, HasRole)
+  @Post('pdf')
+  async downloadSchedulePdf(@Req() req: Request, @Res() res: Response, @Body() body: CreateSchedulePdfDto ) {
+    try {
+      let filePath = await this.schedulesService.createSchedulePdf(body?.groups, req.user?.id);
+      res.download(filePath, 'Schedule.pdf', (err) => {
+        if (err) {
+          res.status(500).send({
+            statusCode: 500,
+            success: false,
+            message: 'PDF yaratishda xatolik yuz berdi',
+          });
+        }
+        // Faylni o'chirish
+        fs.unlinkSync(filePath);
+      });
 
-  //       // Faylni o'chirish
-  //       fs.unlinkSync(filePath);
-  //     });
-  //   } catch (error) {
-  //     res.status(500).send({
-  //       statusCode: 500,
-  //       success: false,
-  //       message: 'PDF yaratishda xatolik yuz berdi',
-  //     });
-  //   }
-  // }
+    } catch (error) {
+      res.status(403).send({
+        statusCode: error.status || HttpStatus.BAD_REQUEST,
+        message: error.message,
+      });
+    }
+  }
 
   @SetRoles(
     rolesName.faculty_admin,

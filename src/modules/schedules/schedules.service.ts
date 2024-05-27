@@ -1,6 +1,9 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import * as pdf from 'pdf-creator-node';
+import * as path from 'path';
+import {v4} from "uuid"
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Admin,
@@ -11,11 +14,8 @@ import {
   Teacher,
   Time,
 } from '@entities';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { rolesName } from '@common';
-
-import * as PDFDocument from 'pdfkit';
-import * as fs from 'fs';
 import { Cache } from 'cache-manager';
 
 @Injectable()
@@ -36,75 +36,216 @@ export class SchedulesService {
     @InjectRepository(Room)
     private readonly roomRepo: Repository<Room>,
     @Inject('CACHE_MANAGER')
-    private cacheManager: Cache
+    private cacheManager: Cache,
   ) {}
 
-  async createSchedulePdf(): Promise<string> {
-    let scheduleData = await this.scheduleRepo.find({
-      relations: {time: true, teacher: true, science: true, room: true, group: true}
-    })
-    const doc = new PDFDocument({ margin: 30 });
-    const fileName = `Schedule-${Date.now()}.pdf`;
-    const filePath = `./${fileName}`;
+  async createSchedulePdf(groupIds: string[], adminId: string) {
+    try {
+      let admin = await this.adminRepo.findOne({
+        where: { id: adminId },
+        relations: { faculty: true },
+      });
 
-    // Create a write stream for the PDF file
-    const writeStream = fs.createWriteStream(filePath);
-    doc.pipe(writeStream);
+      if (!admin.faculty) {
+        throw new HttpException(
+          "Sizning fakultetingiz yo'q",
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      let { nonExistingGroupIds, existingGroups } =
+        await this.checkExistingGroups(groupIds, admin.faculty?.id);
+      if (nonExistingGroupIds.length > 0) {
+        throw new HttpException(
+          `${nonExistingGroupIds.join(', ')} idlik guruhlar mavjud emas`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
-    // Title
-    doc.fontSize(16).text('Jadval', { align: 'center' });
-    doc.moveDown();
+      if (existingGroups?.length > 0) {
+        let allSchedules = await this.scheduleRepo.find({
+          where: { group: { id: In(groupIds) } },
+          relations: { group: true },
+        });
 
-    // Days of the week
-    const daysOfWeek = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma'];
-
-    // Get unique groups from the schedule data
-    const groups = [...new Set(scheduleData.map(item => item.group.name))];
-
-    // Table header
-    let startX = 50;
-    let startY = 100;
-    const cellWidth = 120;
-    const cellHeight = 40;
-
-    doc.fontSize(12);
-
-    // Header Row
-    doc.text(' ', startX, startY, { width: cellWidth, align: 'center' });
-    groups.forEach((group, i) => {
-      doc.text(group, startX + cellWidth * (i + 1), startY, { width: cellWidth, align: 'center' });
-    });
-    startY += cellHeight;
-
-    // Fill table with schedule data
-    daysOfWeek.forEach(day => {
-      doc.text(day, startX, startY, { width: cellWidth, align: 'center'  });
-
-      groups.forEach((group, i) => {
-        const scheduleForGroupAndDay = scheduleData.filter(item => item.day === day && item.group.name === group);
-
-        if (scheduleForGroupAndDay.length > 0) {
-          const scheduleText = scheduleForGroupAndDay.map(item => `${item.time.name}, ${item.teacher.name} ${item.teacher.surname}, ${item.room.name}, ${item.science.name}`).join('\n');
-          doc.text(scheduleText, startX + cellWidth * (i + 1), startY, { width: cellWidth, align: 'left' });
-        } else {
-          doc.text(' ', startX + cellWidth * (i + 1), startY, { width: cellWidth, align: 'center' });
+        let days: Set<string> = new Set();
+        for (let schedule of allSchedules) {
+          days.add(schedule.day);
         }
-      });
-      startY += cellHeight;
-    });
 
-    // End and save the PDF document
-    doc.end();
+        const daysArray: string[] = Array.from(days);
 
-    return new Promise((resolve, reject) => {
-      writeStream.on('finish', () => {
-        resolve(filePath);
-      });
+        // Haftaning kunlari tartibi bo'yicha massiv
+        const weekDaysOrder: string[] = [
+          'Dushanba',
+          'Seshanba',
+          'Chorshanba',
+          'Payshanba',
+          'Juma',
+          'Shanba',
+          'Yakshanba',
+        ];
 
-      writeStream.on('error', (error) => {
-        reject(error);
-      });
-    });
+        // Massivni kerakli tartibda joylashtirish
+        const sortedDaysArray: string[] = daysArray.sort((a, b) => {
+          return weekDaysOrder.indexOf(a) - weekDaysOrder.indexOf(b);
+        });
+
+        let schedules = {};
+        for (let day of sortedDaysArray) {
+          let arr = [];
+          for (let group of existingGroups) {
+            let schedulesByGroupIds = await this.scheduleRepo.find({
+              where: { group: { id: group.id }, day },
+              relations: {
+                group: true,
+                teacher: true,
+                science: true,
+                room: true,
+                time: true,
+              },
+            });
+            arr.push(schedulesByGroupIds);
+          }
+          schedules[day] = arr;
+        }
+
+        const filename = v4()  + '_doc' + '.pdf';
+        let data = {
+          schedules,
+          groups: existingGroups,
+        };
+        Object.keys(data.schedules).forEach((day) => {
+          data.schedules[day] = data.schedules[day].map((slot) => {
+            return slot.length ? slot : [''];
+          });
+        });
+
+        // Render the table
+        let htmlTop = `<!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <style>
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+
+            th,
+            td {
+              border: 1px solid black;
+              padding: 8px;
+              text-align: center;
+            }
+
+            th {
+              background-color: #f2f2f2;
+            }
+
+            .time-wrapper {
+              line-height: 1;
+              padding-top: 0.5rem;
+              position: relative;
+              transform: rotate(180deg);
+              white-space: nowrap;
+              writing-mode: vertical-rl;
+              left: 0;
+              width: 25px;
+              padding-bottom: 15px;
+              box-sizing: border-box;
+              text-align: left;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+            .group-name, .day-name {
+              color: red;
+              font-weight: bold;
+            }
+
+            p {
+              margin: 0;
+            }
+
+
+            </style>
+            <title>Jadval</title>
+          </head>
+          <body>`;
+
+        let htmlBottom = ` </body>
+          </html>`;
+        var html =
+          htmlTop +
+          `<table border="1" style="width: 100%;"><thead>
+        <tr>
+        <td class="day-name">Kun</td>
+        `;
+        data.groups.forEach((group) => {
+          html += `<td class="group-name">${group.name}</td>`;
+        });
+        html += `</tr>
+        </thead>
+        <tbody>`;
+
+        Object.keys(data.schedules).forEach((day, index) => {
+          let maxCount = Math.max(
+            ...data.schedules[day].map((el) => el.length),
+          );
+
+          for (let i = 0; i < maxCount; i++) {
+            if (i === 0) {
+              html += `<tr><td class="day-name" rowspan=${maxCount}>${day.substring(
+                0,
+                2,
+              )}</td>`;
+            }
+            data.schedules[day].forEach((el) => {
+              let sched = el[i];
+              if (sched) {
+                html += `
+                <td>
+                  ${sched.science?.name},
+                  ${sched.teacher?.name[0]}.${sched.teacher?.surname},
+                  ${sched.room?.name}
+                </td>`;
+              } else {
+                html += `<td></td>`;
+              }
+            });
+
+            html += '</tr>';
+          }
+        });
+
+        html += '</tbody></table>';
+        html += htmlBottom;
+
+        let filePath = path.join(process.cwd(), 'src', 'common', 'docs', filename)
+
+        const document = {
+          html: html,
+          data,
+          path: filePath,
+        };
+        let option = {
+          formate: 'A3',
+          orientation: 'portrait',
+          border: '2mm',
+        };
+        await pdf.create(document, option)
+
+        return filePath
+      }
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   async create(body: CreateScheduleDto, adminId: string) {
@@ -242,46 +383,6 @@ export class SchedulesService {
         relations: { faculty: true, role: true },
       });
 
-
-    //////////////// CACHE ///////////////////
-    // let allCachedSchedules: any[] = await this.cacheManager.get("allSchedules");
-
-    // const filterSchedules = (schedules) => {
-    //   return schedules.filter(schedule => {
-    //     let isMatch = true;
-    //     if (day && schedule.day !== day) isMatch = false;
-    //     if (teacher_id && schedule.teacher.id !== teacher_id) isMatch = false;
-    //     if (time_id && schedule.time.id !== time_id) isMatch = false;
-    //     if (room_id && schedule.room.id !== room_id) isMatch = false;
-    //     if (group_id && schedule.group.id !== group_id) isMatch = false;
-    //     if (science_id && schedule.science.id !== science_id) isMatch = false;
-    //     if (faculty_id && schedule.faculty?.id !== faculty_id) isMatch = false;
-    //     if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && schedule.faculty.id !== admin.faculty.id) isMatch = false;
-    //     return isMatch;
-    //   });
-    // };
-
-    // if (allCachedSchedules) {
-    //   const filteredSchedules = filterSchedules(allCachedSchedules);
-    //   const totalCount = filteredSchedules.length;
-    //   const paginatedSchedules = filteredSchedules.slice((page - 1) * limit, page * limit);
-
-    //   return {
-    //     statusCode: HttpStatus.OK,
-    //     success: true,
-    //     cached: true,
-    //     message: 'success',
-    //     data: {
-    //       currentPage: page,
-    //       currentCount: limit,
-    //       totalCount: totalCount,
-    //       totalPages: Math.ceil(totalCount / limit),
-    //       items: paginatedSchedules,
-    //     },
-    //   };
-    // }
- ///////////////////// CACHE END ////////////////////////////////////
-
       let qb = this.scheduleRepo
         .createQueryBuilder('sch')
         .leftJoinAndSelect('sch.room', 'r')
@@ -289,11 +390,30 @@ export class SchedulesService {
         .leftJoinAndSelect('sch.group', 'g')
         .leftJoinAndSelect('sch.time', 'time')
         .leftJoinAndSelect('sch.science', 's')
-        .leftJoinAndSelect('sch.faculty', 'f')
+        .leftJoinAndSelect('sch.faculty', 'f');
 
-        let allSchedules  = await qb.select(['sch.id','sch.day','t.id','t.name','t.surname','time.id','time.name',
-          'r.id','r.name','r.floor','r.capacity','g.id','g.name','s.id','s.name','f.id','f.name',]).getMany()
-        this.cacheManager.set("allSchedules", allSchedules)
+      let allSchedules = await qb
+        .select([
+          'sch.id',
+          'sch.day',
+          't.id',
+          't.name',
+          't.surname',
+          'time.id',
+          'time.name',
+          'r.id',
+          'r.name',
+          'r.floor',
+          'r.capacity',
+          'g.id',
+          'g.name',
+          's.id',
+          's.name',
+          'f.id',
+          'f.name',
+        ])
+        .getMany();
+      this.cacheManager.set('allSchedules', allSchedules);
       if (admin.role?.name === rolesName.super_admin) {
         qb.select([
           'sch.id',
@@ -347,7 +467,7 @@ export class SchedulesService {
 
       if (day) {
         qb.andWhere('sch.day = :day', {
-          day: day
+          day: day,
         });
       }
 
@@ -536,61 +656,6 @@ export class SchedulesService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      ///////// Groups Time ////////////
-      // let busyGroups = [];
-
-      // let checkTime = body.time_id || schedule.time?.id
-      // if (checkTime && body.groups?.length > 0) {
-      //   for (let group_id of body.groups) {
-      //     let checkDuplicate = await this.scheduleRepo.findOne({
-      //       where: {
-      //         id: Not(schedule.id),
-      //         day: body.day || schedule.day,
-      //         faculty: { id: admin.faculty?.id },
-      //         group: { id: group_id },
-      //         time: { id: checkTime },
-      //       },
-      //       relations: { group: true, time: true },
-      //     });
-
-      //     if (checkDuplicate) {
-      //       busyGroups.push(checkDuplicate.group?.name);
-      //     }
-      //   }
-      // } else if (body.time_id || body.day) {
-      //   let checkDuplicate = await this.scheduleRepo.findOne({
-      //     where: {
-      //       id: Not(schedule.id),
-      //       day: body.day || schedule.day,
-      //       faculty: { id: admin.faculty?.id },
-      //       group: { id: schedule.group.id },
-      //       time: { id: body.time_id || schedule.time?.id },
-      //     },
-      //     relations: { group: true, time: true },
-      //   });
-
-      //   if (checkDuplicate) {
-      //     throw new HttpException(
-      //       `${body.day || schedule.day} soat ${
-      //         time.name || schedule.time?.name
-      //       } vaqti uchun ${
-      //         schedule.group.name
-      //       } guruhiga dars avval qo'shilgan`,
-      //       HttpStatus.CONFLICT,
-      //     );
-      //   }
-      // }
-
-      // if (busyGroups.length > 0) {
-      //   throw new HttpException(
-      //     `${body.day || schedule.day} soat ${
-      //       time.name || schedule.time?.name
-      //     } vaqti uchun ${busyGroups.join(
-      //       ', ',
-      //     )} guruhlariga dars avval qo'shilgan`,
-      //     HttpStatus.CONFLICT,
-      //   );
-      // }
 
       if (existingGroups?.length > 0 && body.groups?.length > 0) {
         let schedules = [];
@@ -638,7 +703,7 @@ export class SchedulesService {
         schedule.updated_at = new Date();
 
         await this.scheduleRepo.save(schedule);
-        delete schedule.faculty
+        delete schedule.faculty;
 
         return {
           success: true,
@@ -691,26 +756,23 @@ export class SchedulesService {
     }
   }
 
-  async checkExistingGroups(
-    groupIds: string[],
-    faculty_id: string,
-  ) {
+  async checkExistingGroups(groupIds: string[], faculty_id: string) {
     const nonExistingGroupIds: string[] = [];
     const existingGroups: Group[] = [];
-    if(!groupIds?.length){
-      return {}
+    if (!groupIds?.length) {
+      return {};
     }
 
-      for (const groupId of groupIds) {
-        const group = await this.groupRepo.findOne({
-          where: { id: groupId, faculty: { id: faculty_id } },
-        });
-        if (!group) {
-          nonExistingGroupIds.push(groupId);
-        } else {
-          existingGroups.push(group);
-        }
+    for (const groupId of groupIds) {
+      const group = await this.groupRepo.findOne({
+        where: { id: groupId, faculty: { id: faculty_id } },
+      });
+      if (!group) {
+        nonExistingGroupIds.push(groupId);
+      } else {
+        existingGroups.push(group);
       }
+    }
 
     return { nonExistingGroupIds, existingGroups };
   }
