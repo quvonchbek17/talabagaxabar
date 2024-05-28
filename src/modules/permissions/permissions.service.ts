@@ -1,5 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreatePermissionDto, UpdatePermissionDto } from './dto';
+import {
+  CreatePermissionDto,
+  UpdatePermissionArrayDto,
+  UpdatePermissionDto,
+} from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Permission } from '@entities';
 import { Repository } from 'typeorm';
@@ -59,29 +63,37 @@ export class PermissionsService {
     }
   }
 
-  async update(body: UpdatePermissionDto) {
+  async update(body: UpdatePermissionArrayDto) {
     try {
-      let permission = await this.permissionRepo.findOne({
-        where: { id: body.id },
-      });
-      if (permission) {
-        await this.permissionRepo.update(body.id, {
-          path: body.path || permission.path,
-          desc: body.desc || permission.desc,
-          updated_at: new Date(),
-        });
-        return {
-          success: true,
-          message: 'Yangilandi',
-          statusCode: HttpStatus.OK,
-          data: await this.permissionRepo.findOne({ where: { id: body.id } }),
-        };
-      } else {
-        return new HttpException(
-          "Bunday universitet yo'q",
-          HttpStatus.NOT_FOUND,
+      let { nonExistingpermissionIds, existingPermissions } =
+        await this.checkExistingPermissions(body?.permissions);
+      if (nonExistingpermissionIds.length > 0) {
+        throw new HttpException(
+          `${nonExistingpermissionIds.join(
+            ', ',
+          )} idlik permissionlar mavjud emas`,
+          HttpStatus.BAD_REQUEST,
         );
       }
+
+      if (existingPermissions && existingPermissions.length > 0) {
+        for (let bodyPermission of body.permissions) {
+          let permission = await this.permissionRepo.findOne({
+            where: { id: bodyPermission.id },
+          });
+          await this.permissionRepo.update(permission.id, {
+            path: bodyPermission.path || permission.path,
+            desc: bodyPermission.desc || permission.desc,
+            updated_at: new Date(),
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Yangilandi',
+        statusCode: HttpStatus.OK,
+      };
     } catch (error) {
       throw new HttpException(
         error.message,
@@ -101,10 +113,7 @@ export class PermissionsService {
           message: "O'chirildi",
         };
       } else {
-        throw new HttpException(
-          "Bunday permission yo'q",
-          HttpStatus.NOT_FOUND,
-        );
+        throw new HttpException("Bunday permission yo'q", HttpStatus.NOT_FOUND);
       }
     } catch (error) {
       throw new HttpException(
@@ -112,5 +121,24 @@ export class PermissionsService {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  async checkExistingPermissions(permissions: UpdatePermissionDto[]) {
+    const nonExistingpermissionIds: string[] = [];
+    const existingPermissions: Permission[] = [];
+    if (!permissions) {
+      return {};
+    }
+    for (const permission of permissions) {
+      const checkPermission = await this.permissionRepo.findOne({
+        where: { id: permission.id },
+      });
+      if (!checkPermission) {
+        nonExistingpermissionIds.push(permission.id);
+      } else {
+        existingPermissions.push(checkPermission);
+      }
+    }
+    return { nonExistingpermissionIds, existingPermissions };
   }
 }

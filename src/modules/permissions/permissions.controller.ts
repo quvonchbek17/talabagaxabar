@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 // import { CreatePermissionDto, UpdatePermissionDto, PermissionsService } from "@modules"
 import { PermissionsService } from './permissions.service';
-import { CreatePermissionDto, PermissionParamsIdDto, UpdatePermissionDto } from './dto';
+import { CreatePermissionDto, PermissionParamsIdDto, UpdatePermissionArrayDto } from './dto';
 import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard, HasRole } from '@guards';
 
@@ -25,8 +25,8 @@ export class PermissionsController {
 
   @SetRoles(rolesName.developer, rolesName.super_admin)
   @UseGuards(JwtAuthGuard, HasRole)
-  @Patch("update")
-  update(@Body() body: UpdatePermissionDto) {
+  @Patch()
+  update(@Body() body: UpdatePermissionArrayDto) {
     return this.permissionsService.update(body);
   }
 

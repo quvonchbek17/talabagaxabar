@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ArrayMinSize, IsArray, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 
 export class UpdatePermissionDto {
     @IsString()
@@ -14,4 +15,11 @@ export class UpdatePermissionDto {
     @IsOptional()
     readonly desc: string;
 
+}
+
+export class UpdatePermissionArrayDto {
+    @ValidateNested({ each: true })
+    @Type(() => UpdatePermissionDto)
+    @ArrayMinSize(1)
+    readonly permissions: UpdatePermissionDto[];
 }
