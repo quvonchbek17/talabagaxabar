@@ -114,6 +114,28 @@ export class FacultiesService {
     }
   }
 
+  async getPublic(university_id: string) {
+    try {
+
+      let faculties = await this.facultyRepo.find({
+        where: {university: {id: university_id}},
+        select: ["id", "name"]
+      })
+      
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: faculties
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async findOne(id: string, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({

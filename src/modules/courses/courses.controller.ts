@@ -3,7 +3,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Quer
 import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard, HasRole } from '@guards';
 import { CoursesService } from './courses.service';
-import { CourseParamsIdDto, CreateCourseDto, FindAllQueryDto, UpdateCourseDto } from './dto';
+import { CourseParamsIdDto, CoursePublicParamDto, CreateCourseDto, FindAllQueryDto, UpdateCourseDto } from './dto';
 
 @Controller('courses')
 export class CoursesController {
@@ -32,6 +32,11 @@ export class CoursesController {
        } catch (error) {
            throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
        }
+  }
+
+  @Get("public")
+  async getPublic(@Query() query: CoursePublicParamDto) {
+    return this.coursesService.getPublic(query?.faculty_id);
   }
 
 

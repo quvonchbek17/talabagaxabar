@@ -18,7 +18,7 @@ import {
 import { JwtAuthGuard, HasRole } from '@guards';
 import { SetRoles, rolesName } from '@common';
 import { GroupsService } from './groups.service';
-import { CreateGroupDto, FindAllQueryDto, GroupParamsIdDto, UpdateGroupDto } from './dto';
+import { CreateGroupDto, FindAllQueryDto, GroupParamsIdDto, UpdateGroupDto, GroupPublicParamDto } from './dto';
 
 @Controller('groups')
 export class GroupsController {
@@ -79,6 +79,11 @@ export class GroupsController {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  @Get("public")
+  async getPublic(@Query() query: GroupPublicParamDto) {
+    return this.groupsService.getPublic(query);
   }
 
   @SetRoles(

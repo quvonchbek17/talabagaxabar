@@ -61,6 +61,12 @@ export class UniversitiesController {
     }
   }
 
+  @Get('public')
+  getUniversitiesPublic() {
+    return this.universitiesService.getPublic();
+  }
+
+
   @Get(':id')
   findOne(@Param() params: UniversityParamsIdDto) {
     return this.universitiesService.findOne(params.id);

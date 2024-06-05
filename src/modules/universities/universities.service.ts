@@ -75,6 +75,25 @@ export class UniversitiesService {
     }
   }
 
+  async getPublic() {
+    try {
+      let universities = await this.universityRepo.find({
+        select: ["id", "name"]
+      })
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: universities,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async findOne(id: string) {
     try {
       let university = await this.universityRepo.findOne({ where: { id } });

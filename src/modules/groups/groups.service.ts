@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateGroupDto, UpdateGroupDto } from './dto';
+import { CreateGroupDto, GroupPublicParamDto, UpdateGroupDto } from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Admin, Course, Direction, Education, Group, Time } from '@entities';
 import { Repository } from 'typeorm';
@@ -349,6 +349,30 @@ export class GroupsService {
         message: 'Yangilandi',
         statusCode: HttpStatus.OK,
         data: await this.groupRepo.findOne({ where: { id }, relations: {direction: true, course:true, education: true, times: true} }),
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async getPublic(query: GroupPublicParamDto) {
+    try {
+      let groups = await this.groupRepo.find({
+        where: {
+          direction: {id: query.direction_id},
+          education: {id: query.education_id},
+          course: {id: query.course_id}
+        },
+        select: ["id", "name"]
+      })
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: groups
       };
     } catch (error) {
       throw new HttpException(

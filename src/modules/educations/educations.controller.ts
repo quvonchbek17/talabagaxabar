@@ -22,6 +22,7 @@ import {
   UpdateEducationDto,
   EducationParamsIdDto,
   FindAllQueryDto,
+  EducationPublicParamDto,
 } from './dto';
 import { JwtAuthGuard, HasRole } from '@guards';
 
@@ -66,6 +67,11 @@ export class EducationsController {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  @Get("public")
+  async getPublic(@Query() query: EducationPublicParamDto) {
+    return this.educationsService.getPublic(query?.faculty_id);
   }
 
   @SetRoles(

@@ -8,37 +8,44 @@ export class BotUser extends BaseModel {
 
     @Column({
         name: 'fullname',
-        type: 'varchar'
+        type: 'varchar',
+        nullable: true
     })
     fullname: string;
 
     @Column({
         name: 'phone',
-        type: 'varchar'
+        type: 'varchar',
+        nullable: true
+
     })
     phone: string;
 
     @Column({
         name: 'language',
-        type: 'varchar'
+        type: 'varchar',
+        nullable: true
     })
     language: string;
 
     @Column({
         name: 'username',
-        type: 'varchar'
+        type: 'varchar',
+        nullable: true
     })
     username: string;
 
     @Column({
         name: 'chat_id',
-        type: 'varchar'
+        type: 'bigint',
+        unique: true,
+        nullable: false
     })
-    chat_id: string;
+    chat_id: number;
 
-    @OneToMany(type => Group, group => group.users)
+    @ManyToOne(type => Group, group => group.users)
     @JoinColumn({name: "group_id"})
-    group: Group[];
+    group: Group;
 
     @ManyToOne(type => Faculty, faculty => faculty.courses)
     @JoinColumn({name: "faculty_id"})

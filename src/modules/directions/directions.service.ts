@@ -118,6 +118,26 @@ export class DirectionsService {
     }
   }
 
+  async getPublic(faculty_id: string) {
+    try {
+      let directions = await this.directionRepo.find({
+        where: {faculty: {id: faculty_id}},
+        select: ["id", "name"]
+      })
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: directions
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async findOne(id: string, adminId: string) {
     try {
       let admin = await this.adminRepo.findOne({

@@ -21,6 +21,7 @@ import { DirectionsService } from './directions.service';
 import {
   CreateDirectionDto,
   DirectionParamsIdDto,
+  DirectionPublicParamDto,
   FindAllQueryDto,
   UpdateDirectionDto,
 } from './dto';
@@ -73,6 +74,11 @@ export class DirectionsController {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  @Get("public")
+  async getPublic(@Query() query: DirectionPublicParamDto) {
+    return this.directionsService.getPublic(query?.faculty_id);
   }
 
   @SetRoles(

@@ -3,7 +3,7 @@ import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import * as pdf from 'pdf-creator-node';
 import * as path from 'path';
-import {v4} from "uuid"
+import { v4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Admin,
@@ -109,7 +109,7 @@ export class SchedulesService {
           schedules[day] = arr;
         }
 
-        const filename = v4()  + '_doc' + '.pdf';
+        const filename = v4() + '_doc' + '.pdf';
         let data = {
           schedules,
           groups: existingGroups,
@@ -224,7 +224,13 @@ export class SchedulesService {
         html += '</tbody></table>';
         html += htmlBottom;
 
-        let filePath = path.join(process.cwd(), 'src', 'common', 'docs', filename)
+        let filePath = path.join(
+          process.cwd(),
+          'src',
+          'common',
+          'docs',
+          filename,
+        );
 
         const document = {
           html: html,
@@ -236,9 +242,9 @@ export class SchedulesService {
           orientation: 'portrait',
           border: '2mm',
         };
-        await pdf.create(document, option)
+        await pdf.create(document, option);
 
-        return filePath
+        return filePath;
       }
     } catch (error) {
       throw new HttpException(
@@ -392,28 +398,6 @@ export class SchedulesService {
         .leftJoinAndSelect('sch.science', 's')
         .leftJoinAndSelect('sch.faculty', 'f');
 
-      let allSchedules = await qb
-        .select([
-          'sch.id',
-          'sch.day',
-          't.id',
-          't.name',
-          't.surname',
-          'time.id',
-          'time.name',
-          'r.id',
-          'r.name',
-          'r.floor',
-          'r.capacity',
-          'g.id',
-          'g.name',
-          's.id',
-          's.name',
-          'f.id',
-          'f.name',
-        ])
-        .getMany();
-      this.cacheManager.set('allSchedules', allSchedules);
       if (admin.role?.name === rolesName.super_admin) {
         qb.select([
           'sch.id',
@@ -506,6 +490,50 @@ export class SchedulesService {
           totalPages: Math.ceil(count / limit),
           items: schedules,
         },
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async getPublic(group_id: string) {
+    try {
+
+      let schedules = await this.scheduleRepo
+        .createQueryBuilder('sch')
+        .leftJoinAndSelect('sch.room', 'r')
+        .leftJoinAndSelect('sch.teacher', 't')
+        .leftJoinAndSelect('sch.group', 'g')
+        .leftJoinAndSelect('sch.time', 'time')
+        .leftJoinAndSelect('sch.science', 's')
+        .select([
+          'sch.id',
+          'sch.day',
+          't.id',
+          't.name',
+          't.surname',
+          'time.id',
+          'time.name',
+          'r.id',
+          'r.name',
+          'r.floor',
+          'r.capacity',
+          'g.id',
+          'g.name',
+          's.id',
+          's.name'
+        ])
+        .where('g.id = :groupId', { groupId: group_id })
+        .getMany()
+
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: schedules
       };
     } catch (error) {
       throw new HttpException(

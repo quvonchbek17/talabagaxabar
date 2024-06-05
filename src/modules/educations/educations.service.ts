@@ -58,6 +58,26 @@ export class EducationsService {
     }
   }
 
+  async getPublic(faculty_id: string) {
+    try {
+      let educations = await this.educationRepo.find({
+        where: {faculty: {id: faculty_id}},
+        select: ["id", "name"]
+      })
+      return {
+        statusCode: HttpStatus.OK,
+        success: true,
+        message: 'success',
+        data: educations
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async get(search: string, faculty_id: string, page: number, limit: number, adminId: string) {
     try {
       page = page ? page : 1

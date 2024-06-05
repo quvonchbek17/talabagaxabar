@@ -19,7 +19,7 @@ import {
 import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard, HasRole } from '@guards';
 import { SchedulesService } from './schedules.service';
-import { CreateScheduleDto, FindAllQueryDto, ScheduleParamsIdDto, UpdateScheduleDto, CreateSchedulePdfDto } from './dto';
+import { CreateScheduleDto, FindAllQueryDto, ScheduleParamsIdDto, UpdateScheduleDto, CreateSchedulePdfDto, SchedulePublicParamDto } from './dto';
 import * as fs from 'fs';
 
 
@@ -41,7 +41,7 @@ export class SchedulesController {
   async downloadSchedulePdf(@Req() req: Request, @Res() res: Response, @Body() body: CreateSchedulePdfDto ) {
     try {
       let filePath = await this.schedulesService.createSchedulePdf(body?.groups, req.user?.id);
-      res.download(filePath, 'Schedule.pdf', (err) => {
+      res.download(filePath, "Jadval.pdf", (err) => {
         if (err) {
           res.status(500).send({
             statusCode: 500,
@@ -121,6 +121,11 @@ export class SchedulesController {
         error.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  @Get("public")
+  async getPublic(@Query() query: SchedulePublicParamDto) {
+    return this.schedulesService.getPublic(query?.group_id);
   }
 
   @SetRoles(rolesName.faculty_admin, rolesName.faculty_lead_admin, rolesName.super_admin)

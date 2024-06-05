@@ -3,7 +3,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UseI
 import {FileInterceptor} from "@nestjs/platform-express"
 import { AdminsService } from './admins.service';
 import { JwtAuthGuard, HasRole, CheckPermission } from '@guards';
-import { SetPermission, SetRoles, rolesName, permissions } from '@common';
+import { SetPermission, SetRoles, rolesName, permissions, sidebar, menu } from '@common';
 import { CreateAdminDto, UpdateAdminProfileDto, CheckPasswordDto, AdminParamsIdDto } from './dto';
 import { UniversityParamsIdDto } from '../universities/dto/update.dto';
 
@@ -15,6 +15,34 @@ export class AdminsController {
   @Get('profile')
   getProfile(@Req() req: Request) {
     return this.adminsService.getProfile(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('sidebar')
+  getSideBar(@Req() req: Request) {
+     try {
+      return {
+        success: true,
+        statusCode: HttpStatus.OK,
+        data:  sidebar
+      }
+     } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('menu')
+  getMenu(@Req() req: Request) {
+    try {
+      return {
+        success: true,
+        statusCode: HttpStatus.OK,
+        data: menu
+      }
+     } catch (error) {
+        throw new HttpException(error.message, error.status || HttpStatus.BAD_REQUEST)
+     }
   }
 
   @UseGuards(JwtAuthGuard)
