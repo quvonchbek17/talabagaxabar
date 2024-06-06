@@ -1,0 +1,1252 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 12.18 (Ubuntu 12.18-0ubuntu0.20.04.1)
+-- Dumped by pg_dump version 12.18 (Ubuntu 12.18-0ubuntu0.20.04.1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: adminroles; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.adminroles (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL
+);
+
+
+ALTER TABLE public.adminroles OWNER TO postgres;
+
+--
+-- Name: botadmins; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.botadmins (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    fullname character varying,
+    phone character varying,
+    language character varying,
+    username character varying,
+    faculty_id uuid,
+    chat_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.botadmins OWNER TO postgres;
+
+--
+-- Name: botusers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.botusers (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    fullname character varying,
+    phone character varying,
+    language character varying,
+    username character varying,
+    faculty_id uuid,
+    group_id uuid,
+    chat_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.botusers OWNER TO postgres;
+
+--
+-- Name: courses; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.courses (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.courses OWNER TO postgres;
+
+--
+-- Name: departments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.departments (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.departments OWNER TO postgres;
+
+--
+-- Name: directions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.directions (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.directions OWNER TO postgres;
+
+--
+-- Name: educations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.educations (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.educations OWNER TO postgres;
+
+--
+-- Name: faculties; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.faculties (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    university_id uuid
+);
+
+
+ALTER TABLE public.faculties OWNER TO postgres;
+
+--
+-- Name: groups; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.groups (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying,
+    direction_id uuid,
+    education_id uuid,
+    course_id uuid,
+    faculty_id uuid,
+    student_count integer
+);
+
+
+ALTER TABLE public.groups OWNER TO postgres;
+
+--
+-- Name: groups_times_times; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.groups_times_times (
+    "groupsId" uuid NOT NULL,
+    "timesId" uuid NOT NULL
+);
+
+
+ALTER TABLE public.groups_times_times OWNER TO postgres;
+
+--
+-- Name: locations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.locations (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    latitude character varying NOT NULL,
+    longitude character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.locations OWNER TO postgres;
+
+--
+-- Name: migrations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.migrations (
+    id integer NOT NULL,
+    "timestamp" bigint NOT NULL,
+    name character varying NOT NULL
+);
+
+
+ALTER TABLE public.migrations OWNER TO postgres;
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.migrations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.migrations_id_seq OWNER TO postgres;
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
+
+
+--
+-- Name: permissions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.permissions (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    "desc" character varying
+);
+
+
+ALTER TABLE public.permissions OWNER TO postgres;
+
+--
+-- Name: rooms; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.rooms (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    capacity integer NOT NULL,
+    faculty_id uuid,
+    floor integer NOT NULL
+);
+
+
+ALTER TABLE public.rooms OWNER TO postgres;
+
+--
+-- Name: schedules; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.schedules (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    day character varying NOT NULL,
+    science_id uuid,
+    teacher_id uuid,
+    room_id uuid,
+    time_id uuid,
+    group_id uuid,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.schedules OWNER TO postgres;
+
+--
+-- Name: sciences; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.sciences (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.sciences OWNER TO postgres;
+
+--
+-- Name: systemadmins; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.systemadmins (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    adminname character varying NOT NULL,
+    password character varying NOT NULL,
+    university_id uuid,
+    faculty_id uuid,
+    role_id uuid,
+    img character varying,
+    fullname character varying
+);
+
+
+ALTER TABLE public.systemadmins OWNER TO postgres;
+
+--
+-- Name: systemadmins_permissions_permissions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.systemadmins_permissions_permissions (
+    "systemadminsId" uuid NOT NULL,
+    "permissionsId" uuid NOT NULL
+);
+
+
+ALTER TABLE public.systemadmins_permissions_permissions OWNER TO postgres;
+
+--
+-- Name: teachers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.teachers (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    surname character varying NOT NULL,
+    department_id uuid,
+    faculty_id uuid,
+    degree character varying
+);
+
+
+ALTER TABLE public.teachers OWNER TO postgres;
+
+--
+-- Name: teachers_sciences_sciences; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.teachers_sciences_sciences (
+    "teachersId" uuid NOT NULL,
+    "sciencesId" uuid NOT NULL
+);
+
+
+ALTER TABLE public.teachers_sciences_sciences OWNER TO postgres;
+
+--
+-- Name: times; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.times (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL,
+    faculty_id uuid
+);
+
+
+ALTER TABLE public.times OWNER TO postgres;
+
+--
+-- Name: universities; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.universities (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    name character varying NOT NULL
+);
+
+
+ALTER TABLE public.universities OWNER TO postgres;
+
+--
+-- Name: migrations id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
+
+
+--
+-- Data for Name: adminroles; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.adminroles (id, created_at, updated_at, name) FROM stdin;
+2e468e56-1099-4928-8450-b0dda989fc28	2024-03-25 13:52:35.01215+03	2024-03-25 13:52:35.01215+03	super_admin
+4afd673d-bc35-486f-ad54-2d018db267bf	2024-03-25 13:52:35.01215+03	2024-03-25 13:52:35.01215+03	university_admin
+8ed819c8-c046-4945-bd56-4d7c08542dc1	2024-03-25 13:52:35.01215+03	2024-03-25 13:52:35.01215+03	faculty_lead_admin
+7519f6b5-75f6-4819-a4d7-a1404e5d9395	2024-03-25 13:52:35.01215+03	2024-03-25 13:52:35.01215+03	faculty_admin
+2ecd6779-8f61-40a6-a676-9df95372c4d6	2024-04-04 10:18:30.681761+03	2024-04-04 10:18:30.681761+03	developer
+\.
+
+
+--
+-- Data for Name: botadmins; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.botadmins (id, created_at, updated_at, fullname, phone, language, username, faculty_id, chat_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: botusers; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.botusers (id, created_at, updated_at, fullname, phone, language, username, faculty_id, group_id, chat_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: courses; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.courses (id, created_at, updated_at, name, faculty_id) FROM stdin;
+cb531396-02a4-4b67-860e-a06b925be98b	2024-05-15 15:03:01.754007+03	2024-05-15 15:03:01.754007+03	3-kurs	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+e7986dd6-acb8-4354-b370-83cad0ea6eec	2024-05-15 15:47:45.800841+03	2024-05-15 15:47:45.800841+03	1-kurs	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+be9fb1e3-b46c-465c-b730-0f6f7281f5ef	2024-05-15 15:47:52.070485+03	2024-05-15 15:47:52.070485+03	2-kurs	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+ce09104e-0b37-4d29-9003-a67892f216c9	2024-05-15 15:47:57.592549+03	2024-05-15 15:47:57.592549+03	4-kurs	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: departments; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.departments (id, created_at, updated_at, name, faculty_id) FROM stdin;
+23f00487-a8eb-43b3-a6e4-8697ca572793	2024-05-01 12:35:40.505991+03	2024-05-01 12:35:40.505991+03	HMAT	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+7cb76738-c5cb-417d-9452-181d2101a8e2	2024-05-03 11:25:51.499489+03	2024-05-03 11:25:51.499489+03	AX	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+0a235059-6c7f-438e-8305-c0cced389bb5	2024-05-03 11:26:10.380618+03	2024-05-06 09:07:39.266+03	Sun'iy intellekt	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: directions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.directions (id, created_at, updated_at, name, faculty_id) FROM stdin;
+708bde35-4967-4542-a029-741fbf814fa4	2024-05-02 11:33:12.351881+03	2024-05-02 11:33:12.351881+03	KIDT	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+86196650-97e8-460d-9e9c-8da6d121f260	2024-05-02 11:33:24.493377+03	2024-05-02 11:33:24.493377+03	ATT	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+81e2f7e0-242c-4fcc-97c2-6c6fb261e753	2024-05-19 18:44:48.280358+03	2024-05-19 18:44:48.280358+03	AX	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: educations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.educations (id, created_at, updated_at, name, faculty_id) FROM stdin;
+9338f02f-d837-4e28-98a3-200d515f0ac6	2024-05-15 13:25:52.314656+03	2024-05-15 13:25:52.314656+03	Sirtqi	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+682465c6-0700-4360-bdc6-8e99927e22ea	2024-05-19 18:44:13.325519+03	2024-05-19 18:44:13.325519+03	Kunduzgi	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+0561a34a-4a7a-43c6-b12a-113f40f0afb4	2024-05-19 18:44:21.022093+03	2024-05-19 18:44:21.022093+03	Kechki	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: faculties; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.faculties (id, created_at, updated_at, name, university_id) FROM stdin;
+afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	2024-03-25 14:06:56.603141+03	2024-03-25 14:06:56.603141+03	AMIT	a54bd91b-ccad-4d52-b9de-ba8464168d7b
+e2045fa5-b262-458e-9d33-7d893f8c3d9f	2024-04-19 13:07:58.774475+03	2024-05-12 20:24:10.263+03	Matematika	a54bd91b-ccad-4d52-b9de-ba8464168d7b
+\.
+
+
+--
+-- Data for Name: groups; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.groups (id, created_at, updated_at, name, direction_id, education_id, course_id, faculty_id, student_count) FROM stdin;
+33513f86-81d9-4fa1-b3d0-5e91300c168f	2024-05-24 19:05:33.255716+03	2024-05-24 19:16:11.755+03	ATT-2002	86196650-97e8-460d-9e9c-8da6d121f260	682465c6-0700-4360-bdc6-8e99927e22ea	ce09104e-0b37-4d29-9003-a67892f216c9	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	30
+bc471633-2c8a-4ae5-92a4-35eadae20566	2024-05-17 18:46:41.066038+03	2024-05-24 19:16:34.381+03	ATT-2001	708bde35-4967-4542-a029-741fbf814fa4	9338f02f-d837-4e28-98a3-200d515f0ac6	cb531396-02a4-4b67-860e-a06b925be98b	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	432
+e9c34839-1034-406f-ac90-00673ae8d971	2024-05-25 22:39:19.918342+03	2024-05-25 22:39:19.918342+03	AX-2001	86196650-97e8-460d-9e9c-8da6d121f260	682465c6-0700-4360-bdc6-8e99927e22ea	ce09104e-0b37-4d29-9003-a67892f216c9	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	43
+495b44f2-2160-495e-aa9f-1ad7d1247657	2024-05-23 00:15:07.498288+03	2024-06-05 10:41:27.72+03	ATT-2003-x	81e2f7e0-242c-4fcc-97c2-6c6fb261e753	682465c6-0700-4360-bdc6-8e99927e22ea	e7986dd6-acb8-4354-b370-83cad0ea6eec	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	30
+\.
+
+
+--
+-- Data for Name: groups_times_times; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.groups_times_times ("groupsId", "timesId") FROM stdin;
+33513f86-81d9-4fa1-b3d0-5e91300c168f	ba1c9a2f-9fab-43fd-a076-176188e5f49e
+33513f86-81d9-4fa1-b3d0-5e91300c168f	307decf3-9405-4481-b8c3-1237fd15ef18
+33513f86-81d9-4fa1-b3d0-5e91300c168f	7ce66635-441c-42fb-8800-d88d9efae852
+495b44f2-2160-495e-aa9f-1ad7d1247657	ba1c9a2f-9fab-43fd-a076-176188e5f49e
+495b44f2-2160-495e-aa9f-1ad7d1247657	307decf3-9405-4481-b8c3-1237fd15ef18
+bc471633-2c8a-4ae5-92a4-35eadae20566	307decf3-9405-4481-b8c3-1237fd15ef18
+bc471633-2c8a-4ae5-92a4-35eadae20566	7ce66635-441c-42fb-8800-d88d9efae852
+e9c34839-1034-406f-ac90-00673ae8d971	ba1c9a2f-9fab-43fd-a076-176188e5f49e
+e9c34839-1034-406f-ac90-00673ae8d971	307decf3-9405-4481-b8c3-1237fd15ef18
+e9c34839-1034-406f-ac90-00673ae8d971	7ce66635-441c-42fb-8800-d88d9efae852
+495b44f2-2160-495e-aa9f-1ad7d1247657	7c8c24b6-549b-48d6-a093-8f5b64ae36a6
+\.
+
+
+--
+-- Data for Name: locations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.locations (id, created_at, updated_at, latitude, longitude, faculty_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: migrations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.migrations (id, "timestamp", name) FROM stdin;
+1	1698068025445	Update1698068025445
+2	1698068263556	Update1698068263556
+3	1701170620671	Update1701170620671
+4	1711363655886	Update1711363655886
+5	1712214686448	Update1712214686448
+6	1715176247377	Update1715176247377
+7	1715513898944	Update1715513898944
+10	1715518335916	Update1715518335916
+11	1715530416576	Update1715530416576
+12	1715540387606	Update1715540387606
+14	1715935371807	Update1715935371807
+16	1715943346044	Update1715943346044
+17	1715961308678	Update1715961308678
+18	1716375422607	Update1716375422607
+19	1716489296916	Update1716489296916
+20	1717613895606	Update1717613895606
+\.
+
+
+--
+-- Data for Name: permissions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.permissions (id, created_at, updated_at, name, "desc") FROM stdin;
+9f97a710-2494-4b28-9149-58a02685ffd0	2024-04-04 10:41:16.539194+03	2024-05-28 09:39:36.931+03	/admins/universities/create	Universitetga admin qo'shish
+9ab8e93c-f60f-43d2-afb2-9fbfd368b80f	2024-04-04 10:41:16.547893+03	2024-05-28 09:39:36.943+03	/admins/universities/:id	Universitetni idsi bo'yocha olish
+9f67361c-1bdd-479e-be35-ad1cd1dd8c9c	2024-04-04 10:41:16.56709+03	2024-05-28 09:39:36.956+03	/admins/universities/all	Barcha universitetlarni olish
+36a41819-473e-4930-be4b-fe2c6e137af1	2024-04-04 10:41:16.592741+03	2024-05-28 09:39:36.968+03	/admins/permissions/all	Ruxsatlarni olish uuu
+3b2edb9c-db00-4ad2-8703-4cab0d325afa	2024-04-04 10:41:16.615501+03	2024-05-28 09:39:36.979+03	/admins/profile/update	Admin o'z profili ma'lumotlarini yangilashi
+\.
+
+
+--
+-- Data for Name: rooms; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.rooms (id, created_at, updated_at, name, capacity, faculty_id, floor) FROM stdin;
+fde1aa2e-b0f1-4f3f-aec4-d6088a842a82	2024-05-14 19:53:45.835189+03	2024-05-14 19:53:45.835189+03	A-202	40	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	2
+f7568661-9403-4bfc-bf0c-10969c3cb8e6	2024-05-14 21:32:26.984685+03	2024-05-14 21:32:26.984685+03	G-124	80	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	2
+4a739377-d725-4259-82b1-ebad8bd390a6	2024-05-25 23:37:25.696159+03	2024-05-25 23:37:25.696159+03	A-288	10	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	3
+3463334e-85f2-420a-ace7-e44874e9216e	2024-06-04 08:00:26.969195+03	2024-06-04 08:00:26.969195+03	D-323	15	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	4
+78c1324e-7bc4-40dc-b352-ca29a161ebd4	2024-06-04 08:00:42.255487+03	2024-06-04 08:00:42.255487+03	E-656	50	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	6
+3ae6246f-4d45-4a90-902b-69c0bf58ca11	2024-06-04 08:01:09.058987+03	2024-06-04 08:01:09.058987+03	T-90	45	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	3
+f83fbed6-91d5-4f9b-9e9f-965c09b43132	2024-06-04 08:01:34.54317+03	2024-06-04 08:01:34.54317+03	CU-30SM	25	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	1
+e179a413-21b4-4267-bdd4-9a599890d355	2024-06-04 08:01:58.437647+03	2024-06-04 08:01:58.437647+03	R-90	20	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	4
+cc9c2528-6c8d-4781-a489-1faeea884326	2024-06-04 08:02:25.765937+03	2024-06-04 08:02:25.765937+03	Y-644	20	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	1
+6adc0786-c652-4a9b-aea7-bd96e1ca40d9	2024-06-04 08:02:50.910085+03	2024-06-04 08:02:50.910085+03	SA-345	35	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	3
+f97038e8-27b1-414e-838c-65fb84a21d8a	2024-06-04 08:03:11.568595+03	2024-06-04 08:03:11.568595+03	U-755	30	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	4
+\.
+
+
+--
+-- Data for Name: schedules; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.schedules (id, created_at, updated_at, day, science_id, teacher_id, room_id, time_id, group_id, faculty_id) FROM stdin;
+a4d74896-e246-44a7-ac9c-beb05b376e49	2024-05-27 14:48:32.71547+03	2024-05-27 14:48:32.71547+03	Dushanba	1433d769-c062-4e76-954e-514e57d00a85	8114b70c-55eb-420e-bee5-2eb32891c204	fde1aa2e-b0f1-4f3f-aec4-d6088a842a82	ba1c9a2f-9fab-43fd-a076-176188e5f49e	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+aaf53d44-b621-4515-8de0-1eb687a2b46b	2024-05-27 14:50:25.292692+03	2024-05-27 14:50:25.292692+03	Seshanba	c6d668fb-65a4-4ad5-ad9a-b7842d47e054	412b68ad-b100-4fb1-bfeb-0e03cf97b999	f7568661-9403-4bfc-bf0c-10969c3cb8e6	ba1c9a2f-9fab-43fd-a076-176188e5f49e	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+d24daef7-8fa8-4d02-af8a-4e48b24210b3	2024-05-28 14:10:45.743735+03	2024-05-28 14:10:45.743735+03	Juma	1433d769-c062-4e76-954e-514e57d00a85	412b68ad-b100-4fb1-bfeb-0e03cf97b999	f7568661-9403-4bfc-bf0c-10969c3cb8e6	7ce66635-441c-42fb-8800-d88d9efae852	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+272e930a-eacd-4d2b-bf21-6efd1c8175ab	2024-05-28 19:27:08.847001+03	2024-05-28 19:27:08.847001+03	Chorshanba	0074e679-aebc-474c-9e96-aa71e2765bef	3ad398a9-7b95-4697-99e0-bec10841ea00	fde1aa2e-b0f1-4f3f-aec4-d6088a842a82	307decf3-9405-4481-b8c3-1237fd15ef18	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+61defa68-f5ff-4e7e-8476-b84a70ff99fd	2024-05-28 19:27:28.586294+03	2024-05-28 19:27:28.586294+03	Shanba	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	3ad398a9-7b95-4697-99e0-bec10841ea00	f7568661-9403-4bfc-bf0c-10969c3cb8e6	ba1c9a2f-9fab-43fd-a076-176188e5f49e	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+87d7f34f-6f98-4887-b2ad-f3bbf794dfa0	2024-05-28 19:27:37.872212+03	2024-05-28 19:27:37.872212+03	Payshanba	1433d769-c062-4e76-954e-514e57d00a85	3ad398a9-7b95-4697-99e0-bec10841ea00	f7568661-9403-4bfc-bf0c-10969c3cb8e6	7ce66635-441c-42fb-8800-d88d9efae852	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+39bdd75d-e498-44f8-90d4-f1abab767ff1	2024-06-04 17:46:04.214222+03	2024-06-04 17:46:04.214222+03	Dushanba	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	3ad398a9-7b95-4697-99e0-bec10841ea00	4a739377-d725-4259-82b1-ebad8bd390a6	ba1c9a2f-9fab-43fd-a076-176188e5f49e	bc471633-2c8a-4ae5-92a4-35eadae20566	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+e015f1b8-3de7-4034-9136-9e3c7b8244bf	2024-06-04 19:12:01.195672+03	2024-06-04 19:12:01.195672+03	Juma	c6d668fb-65a4-4ad5-ad9a-b7842d47e054	8114b70c-55eb-420e-bee5-2eb32891c204	f7568661-9403-4bfc-bf0c-10969c3cb8e6	7ce66635-441c-42fb-8800-d88d9efae852	33513f86-81d9-4fa1-b3d0-5e91300c168f	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+48b2519d-81bf-4907-a6ec-7a0e0fccb0af	2024-06-05 08:41:07.354021+03	2024-06-05 08:41:07.354021+03	Seshanba	1433d769-c062-4e76-954e-514e57d00a85	412b68ad-b100-4fb1-bfeb-0e03cf97b999	f7568661-9403-4bfc-bf0c-10969c3cb8e6	307decf3-9405-4481-b8c3-1237fd15ef18	33513f86-81d9-4fa1-b3d0-5e91300c168f	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+a22c4179-6531-4b52-825e-2e3b93ec45ec	2024-06-05 10:45:30.057642+03	2024-06-05 10:45:30.057642+03	Dushanba	1433d769-c062-4e76-954e-514e57d00a85	412b68ad-b100-4fb1-bfeb-0e03cf97b999	fde1aa2e-b0f1-4f3f-aec4-d6088a842a82	7c8c24b6-549b-48d6-a093-8f5b64ae36a6	495b44f2-2160-495e-aa9f-1ad7d1247657	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+482e3c21-bb7a-4f7f-814f-796c089c86af	2024-06-05 12:35:50.675475+03	2024-06-05 12:35:50.675475+03	Juma	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	3ad398a9-7b95-4697-99e0-bec10841ea00	f7568661-9403-4bfc-bf0c-10969c3cb8e6	ba1c9a2f-9fab-43fd-a076-176188e5f49e	495b44f2-2160-495e-aa9f-1ad7d1247657	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+8289ec8d-5793-47f6-bc9d-6af4655a69c8	2024-06-05 13:11:52.117258+03	2024-06-05 13:11:52.117258+03	Seshanba	c6d668fb-65a4-4ad5-ad9a-b7842d47e054	8114b70c-55eb-420e-bee5-2eb32891c204	fde1aa2e-b0f1-4f3f-aec4-d6088a842a82	307decf3-9405-4481-b8c3-1237fd15ef18	bc471633-2c8a-4ae5-92a4-35eadae20566	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+9431fb4a-39b3-4ff0-a5fa-5db30bf49036	2024-06-05 13:12:13.581021+03	2024-06-05 13:12:13.581021+03	Chorshanba	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	8114b70c-55eb-420e-bee5-2eb32891c204	78c1324e-7bc4-40dc-b352-ca29a161ebd4	ba1c9a2f-9fab-43fd-a076-176188e5f49e	33513f86-81d9-4fa1-b3d0-5e91300c168f	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+cff61038-dd88-4164-b6ec-83c2163edd99	2024-06-04 19:11:49.237164+03	2024-06-05 14:02:55.297+03	Dushanba	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	3ad398a9-7b95-4697-99e0-bec10841ea00	fde1aa2e-b0f1-4f3f-aec4-d6088a842a82	ba1c9a2f-9fab-43fd-a076-176188e5f49e	33513f86-81d9-4fa1-b3d0-5e91300c168f	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+411e31d3-16d3-47b9-85fc-ad0a8f0558c8	2024-06-05 20:29:07.603936+03	2024-06-05 20:29:07.603936+03	Payshanba	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	412b68ad-b100-4fb1-bfeb-0e03cf97b999	cc9c2528-6c8d-4781-a489-1faeea884326	ba1c9a2f-9fab-43fd-a076-176188e5f49e	e9c34839-1034-406f-ac90-00673ae8d971	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: sciences; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.sciences (id, created_at, updated_at, name, faculty_id) FROM stdin;
+c6d668fb-65a4-4ad5-ad9a-b7842d47e054	2024-05-12 15:56:16.284972+03	2024-05-12 15:56:16.284972+03	Dasturlash asoslari	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+bd8ca0a3-c485-42ba-96d4-75ad5687dc9b	2024-05-12 15:56:28.581806+03	2024-05-12 15:56:28.581806+03	Tarix	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+1433d769-c062-4e76-954e-514e57d00a85	2024-05-12 15:56:37.003415+03	2024-05-12 15:56:37.003415+03	Matematik analiz	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+d6782220-9815-42b4-97bd-a176b4845034	2024-06-04 17:14:14.956214+03	2024-06-04 17:14:14.956214+03	rewrw	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+e5ef6a8e-b23a-489a-b379-9fd753251780	2024-06-04 17:14:19.604892+03	2024-06-04 17:14:19.604892+03	rewrew	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+eaee961e-71dc-46ee-a523-ba5d40455afc	2024-06-04 17:14:23.730139+03	2024-06-04 17:14:23.730139+03	gfhfg	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+ad511215-7bd1-4c85-975b-556651aaa19d	2024-06-04 17:14:27.081721+03	2024-06-04 17:14:27.081721+03	uyttutr	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+98ccd4c9-9ede-42bf-a350-ff95c75cdd15	2024-06-04 17:14:36.24973+03	2024-06-04 17:14:36.24973+03	vcxv	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+f93f2c1b-c386-4ca9-9966-7697b928ab24	2024-06-04 17:14:41.995164+03	2024-06-04 17:14:41.995164+03	iuyt	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+0074e679-aebc-474c-9e96-aa71e2765bef	2024-05-14 18:49:15.278894+03	2024-06-05 12:32:31.215+03	Ona tili	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+48d6b43d-4743-47a5-9ba6-f4c1ae4b2592	2024-05-22 14:14:39.68194+03	2024-06-05 12:33:06.368+03	Informatika	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: systemadmins; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.systemadmins (id, created_at, updated_at, adminname, password, university_id, faculty_id, role_id, img, fullname) FROM stdin;
+b47fc34a-ea90-4f66-bd53-6bebf5e41b54	2023-10-23 16:49:17.116211+03	2023-10-23 16:49:17.116211+03	faculty_lead	1111	\N	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	8ed819c8-c046-4945-bd56-4d7c08542dc1	\N	\N
+1a6d60a9-4787-40d4-9dd6-8fa52802e8f1	2024-04-04 10:20:57.011388+03	2024-04-04 10:20:57.011388+03	developer	4444	\N	\N	2ecd6779-8f61-40a6-a676-9df95372c4d6	\N	\N
+c422775a-b740-478f-9951-d9851392f073	2024-03-25 13:59:39.381391+03	2024-05-12 14:17:13.615+03	faculty	1111	\N	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	7519f6b5-75f6-4819-a4d7-a1404e5d9395	aa2cda51-f54a-41f2-b1c7-f9a19a18c28b.jpeg	Quvonchbek Muysinov
+1d91fe6f-c5a4-4cbb-adcd-64539cc8e39f	2024-04-04 19:51:41.100503+03	2024-05-12 14:18:53.482+03	behzod	1111	a54bd91b-ccad-4d52-b9de-ba8464168d7b	\N	4afd673d-bc35-486f-ad54-2d018db267bf	486a9760-406e-4fe2-bfc2-8fd031c2447b.jpeg	Nosirov Behzodjon
+94c5a29d-f944-418f-aa1e-59d3eed72770	2024-04-22 08:31:30.255314+03	2024-05-12 17:07:14.006+03	nodir	1111	a54bd91b-ccad-4d52-b9de-ba8464168d7b	\N	4afd673d-bc35-486f-ad54-2d018db267bf	efe84240-1e9d-45a9-941c-04f127ea411e.jpeg	Tohirov Nodir
+3188be25-9d05-40e3-8ed5-4a74aeaffd31	2024-04-22 09:24:52.111594+03	2024-05-12 20:15:40.16+03	abez	1111	86972d0c-1b89-427a-b3ae-c992a198f0db	\N	4afd673d-bc35-486f-ad54-2d018db267bf	18f515e4-10fe-4d68-9bac-35db540f40a6.jpeg	ABEZ
+11b2e789-4939-437e-a5fb-bbfc737eb37e	2024-05-16 13:41:44.696494+03	2024-05-16 13:41:44.696494+03	wwww	1111	a54bd91b-ccad-4d52-b9de-ba8464168d7b	\N	4afd673d-bc35-486f-ad54-2d018db267bf	\N	fdsfdsf
+2845cfcd-3745-4ba0-944a-d9d562ae5339	2023-10-23 16:49:17.116211+03	2024-05-23 21:52:31.479+03	super	1111	\N	\N	2e468e56-1099-4928-8450-b0dda989fc28	6ee2b02b-ec6e-41ad-9c0a-a212a3dcec3c.jpeg	Talabaga xabar
+\.
+
+
+--
+-- Data for Name: systemadmins_permissions_permissions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.systemadmins_permissions_permissions ("systemadminsId", "permissionsId") FROM stdin;
+1d91fe6f-c5a4-4cbb-adcd-64539cc8e39f	9f97a710-2494-4b28-9149-58a02685ffd0
+94c5a29d-f944-418f-aa1e-59d3eed72770	9f97a710-2494-4b28-9149-58a02685ffd0
+94c5a29d-f944-418f-aa1e-59d3eed72770	9f67361c-1bdd-479e-be35-ad1cd1dd8c9c
+94c5a29d-f944-418f-aa1e-59d3eed72770	36a41819-473e-4930-be4b-fe2c6e137af1
+94c5a29d-f944-418f-aa1e-59d3eed72770	3b2edb9c-db00-4ad2-8703-4cab0d325afa
+3188be25-9d05-40e3-8ed5-4a74aeaffd31	9f97a710-2494-4b28-9149-58a02685ffd0
+11b2e789-4939-437e-a5fb-bbfc737eb37e	9f97a710-2494-4b28-9149-58a02685ffd0
+\.
+
+
+--
+-- Data for Name: teachers; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.teachers (id, created_at, updated_at, name, surname, department_id, faculty_id, degree) FROM stdin;
+8114b70c-55eb-420e-bee5-2eb32891c204	2024-05-12 13:10:36.796093+03	2024-05-23 00:37:11.832+03	Behzod	Nosirov	0a235059-6c7f-438e-8305-c0cced389bb5	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	Akademik
+3ad398a9-7b95-4697-99e0-bec10841ea00	2024-05-12 07:50:04.93781+03	2024-05-23 00:37:22.272+03	Ali	Valiyev	23f00487-a8eb-43b3-a6e4-8697ca572793	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	Professor
+412b68ad-b100-4fb1-bfeb-0e03cf97b999	2024-05-14 18:26:25.43708+03	2024-05-23 00:37:30.974+03	Akbar	Qo'yliyev	7cb76738-c5cb-417d-9452-181d2101a8e2	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee	Dotsent
+\.
+
+
+--
+-- Data for Name: teachers_sciences_sciences; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.teachers_sciences_sciences ("teachersId", "sciencesId") FROM stdin;
+8114b70c-55eb-420e-bee5-2eb32891c204	c6d668fb-65a4-4ad5-ad9a-b7842d47e054
+8114b70c-55eb-420e-bee5-2eb32891c204	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b
+412b68ad-b100-4fb1-bfeb-0e03cf97b999	1433d769-c062-4e76-954e-514e57d00a85
+412b68ad-b100-4fb1-bfeb-0e03cf97b999	c6d668fb-65a4-4ad5-ad9a-b7842d47e054
+412b68ad-b100-4fb1-bfeb-0e03cf97b999	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b
+3ad398a9-7b95-4697-99e0-bec10841ea00	0074e679-aebc-474c-9e96-aa71e2765bef
+3ad398a9-7b95-4697-99e0-bec10841ea00	bd8ca0a3-c485-42ba-96d4-75ad5687dc9b
+\.
+
+
+--
+-- Data for Name: times; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.times (id, created_at, updated_at, name, faculty_id) FROM stdin;
+ba1c9a2f-9fab-43fd-a076-176188e5f49e	2024-05-18 05:45:53.568561+03	2024-05-23 01:16:55.236+03	09:00	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+307decf3-9405-4481-b8c3-1237fd15ef18	2024-05-19 10:07:30.385942+03	2024-05-24 18:41:29.65+03	11:23	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+7ce66635-441c-42fb-8800-d88d9efae852	2024-05-24 19:15:57.320433+03	2024-05-24 19:15:57.320433+03	12:00	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+7c8c24b6-549b-48d6-a093-8f5b64ae36a6	2024-06-05 10:40:25.790724+03	2024-06-05 10:40:25.790724+03	14:00	afe4a9a8-fe0d-4e21-98cd-f2e8cd14b6ee
+\.
+
+
+--
+-- Data for Name: universities; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.universities (id, created_at, updated_at, name) FROM stdin;
+a54bd91b-ccad-4d52-b9de-ba8464168d7b	2024-03-25 14:02:59.054087+03	2024-03-25 14:02:59.054087+03	Milliy universitet
+86972d0c-1b89-427a-b3ae-c992a198f0db	2024-04-16 13:15:25.938944+03	2024-04-16 13:15:25.938944+03	TATU
+\.
+
+
+--
+-- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.migrations_id_seq', 20, true);
+
+
+--
+-- Name: rooms PK_0368a2d7c215f2d0458a54933f2; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rooms
+    ADD CONSTRAINT "PK_0368a2d7c215f2d0458a54933f2" PRIMARY KEY (id);
+
+
+--
+-- Name: educations PK_09d2f29e7f6f31f5c01d79d2dbf; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.educations
+    ADD CONSTRAINT "PK_09d2f29e7f6f31f5c01d79d2dbf" PRIMARY KEY (id);
+
+
+--
+-- Name: systemadmins_permissions_permissions PK_0a5e92e3aea1145c7de7fa5221a; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins_permissions_permissions
+    ADD CONSTRAINT "PK_0a5e92e3aea1145c7de7fa5221a" PRIMARY KEY ("systemadminsId", "permissionsId");
+
+
+--
+-- Name: times PK_21a9ce7a877cba720e30089638e; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.times
+    ADD CONSTRAINT "PK_21a9ce7a877cba720e30089638e" PRIMARY KEY (id);
+
+
+--
+-- Name: systemadmins PK_2d4967cfc9efd6cf66fea4d9a9b; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins
+    ADD CONSTRAINT "PK_2d4967cfc9efd6cf66fea4d9a9b" PRIMARY KEY (id);
+
+
+--
+-- Name: courses PK_3f70a487cc718ad8eda4e6d58c9; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.courses
+    ADD CONSTRAINT "PK_3f70a487cc718ad8eda4e6d58c9" PRIMARY KEY (id);
+
+
+--
+-- Name: groups PK_659d1483316afb28afd3a90646e; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT "PK_659d1483316afb28afd3a90646e" PRIMARY KEY (id);
+
+
+--
+-- Name: sciences PK_6ff16bf8776f17b7d37e1b4ba15; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sciences
+    ADD CONSTRAINT "PK_6ff16bf8776f17b7d37e1b4ba15" PRIMARY KEY (id);
+
+
+--
+-- Name: groups_times_times PK_75ccc449334695d82c84a88756c; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups_times_times
+    ADD CONSTRAINT "PK_75ccc449334695d82c84a88756c" PRIMARY KEY ("groupsId", "timesId");
+
+
+--
+-- Name: locations PK_7cc1c9e3853b94816c094825e74; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT "PK_7cc1c9e3853b94816c094825e74" PRIMARY KEY (id);
+
+
+--
+-- Name: schedules PK_7e33fc2ea755a5765e3564e66dd; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "PK_7e33fc2ea755a5765e3564e66dd" PRIMARY KEY (id);
+
+
+--
+-- Name: departments PK_839517a681a86bb84cbcc6a1e9d; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.departments
+    ADD CONSTRAINT "PK_839517a681a86bb84cbcc6a1e9d" PRIMARY KEY (id);
+
+
+--
+-- Name: migrations PK_8c82d7f526340ab734260ea46be; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.migrations
+    ADD CONSTRAINT "PK_8c82d7f526340ab734260ea46be" PRIMARY KEY (id);
+
+
+--
+-- Name: universities PK_8da52f2cee6b407559fdbabf59e; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.universities
+    ADD CONSTRAINT "PK_8da52f2cee6b407559fdbabf59e" PRIMARY KEY (id);
+
+
+--
+-- Name: permissions PK_920331560282b8bd21bb02290df; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.permissions
+    ADD CONSTRAINT "PK_920331560282b8bd21bb02290df" PRIMARY KEY (id);
+
+
+--
+-- Name: teachers_sciences_sciences PK_a359aac03a4d24b0eb54829acef; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.teachers_sciences_sciences
+    ADD CONSTRAINT "PK_a359aac03a4d24b0eb54829acef" PRIMARY KEY ("teachersId", "sciencesId");
+
+
+--
+-- Name: teachers PK_a8d4f83be3abe4c687b0a0093c8; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.teachers
+    ADD CONSTRAINT "PK_a8d4f83be3abe4c687b0a0093c8" PRIMARY KEY (id);
+
+
+--
+-- Name: botusers PK_caaae635fdb2305ed0ed72d3168; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botusers
+    ADD CONSTRAINT "PK_caaae635fdb2305ed0ed72d3168" PRIMARY KEY (id);
+
+
+--
+-- Name: adminroles PK_e756e016951bd36e915ef63a2c0; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.adminroles
+    ADD CONSTRAINT "PK_e756e016951bd36e915ef63a2c0" PRIMARY KEY (id);
+
+
+--
+-- Name: botadmins PK_e8b66fd5054b9d1249f8c67dd7e; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botadmins
+    ADD CONSTRAINT "PK_e8b66fd5054b9d1249f8c67dd7e" PRIMARY KEY (id);
+
+
+--
+-- Name: directions PK_f619ca47644a835bd091e8b9814; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.directions
+    ADD CONSTRAINT "PK_f619ca47644a835bd091e8b9814" PRIMARY KEY (id);
+
+
+--
+-- Name: faculties PK_fd83e4a09c7182ccf7bdb3770b9; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.faculties
+    ADD CONSTRAINT "PK_fd83e4a09c7182ccf7bdb3770b9" PRIMARY KEY (id);
+
+
+--
+-- Name: universities UQ_25b08a78732a663bb35872eaa70; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.universities
+    ADD CONSTRAINT "UQ_25b08a78732a663bb35872eaa70" UNIQUE (name);
+
+
+--
+-- Name: botusers UQ_262b31910ff075891a76c3fc29f; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botusers
+    ADD CONSTRAINT "UQ_262b31910ff075891a76c3fc29f" UNIQUE (chat_id);
+
+
+--
+-- Name: systemadmins UQ_2f5df01655318814120227695dd; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins
+    ADD CONSTRAINT "UQ_2f5df01655318814120227695dd" UNIQUE (adminname);
+
+
+--
+-- Name: permissions UQ_48ce552495d14eae9b187bb6716; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.permissions
+    ADD CONSTRAINT "UQ_48ce552495d14eae9b187bb6716" UNIQUE (name);
+
+
+--
+-- Name: botadmins UQ_ab511b5a43dcbf47b7d85ddc661; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botadmins
+    ADD CONSTRAINT "UQ_ab511b5a43dcbf47b7d85ddc661" UNIQUE (chat_id);
+
+
+--
+-- Name: adminroles UQ_ccc471ce65a28f70814e1f08636; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.adminroles
+    ADD CONSTRAINT "UQ_ccc471ce65a28f70814e1f08636" UNIQUE (name);
+
+
+--
+-- Name: IDX_22c32952ea952af85bf073ae59; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_22c32952ea952af85bf073ae59" ON public.systemadmins_permissions_permissions USING btree ("permissionsId");
+
+
+--
+-- Name: IDX_2f6e6a843fd6755ca0de2009b1; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_2f6e6a843fd6755ca0de2009b1" ON public.systemadmins_permissions_permissions USING btree ("systemadminsId");
+
+
+--
+-- Name: IDX_39c76686d99a8229267be4f40b; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_39c76686d99a8229267be4f40b" ON public.groups_times_times USING btree ("timesId");
+
+
+--
+-- Name: IDX_470ac240be5e58ccdddff6e137; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_470ac240be5e58ccdddff6e137" ON public.teachers_sciences_sciences USING btree ("teachersId");
+
+
+--
+-- Name: IDX_cc1da3682b0729dcd115e3e34f; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_cc1da3682b0729dcd115e3e34f" ON public.groups_times_times USING btree ("groupsId");
+
+
+--
+-- Name: IDX_d868c81f9198e5be5fee49d5cb; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "IDX_d868c81f9198e5be5fee49d5cb" ON public.teachers_sciences_sciences USING btree ("sciencesId");
+
+
+--
+-- Name: rooms FK_077a8345d9698d307ac13052aba; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rooms
+    ADD CONSTRAINT "FK_077a8345d9698d307ac13052aba" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: locations FK_137ca675f2921c1a0e71883a243; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT "FK_137ca675f2921c1a0e71883a243" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: groups FK_14d220592be8c4979dc1be3b6ab; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT "FK_14d220592be8c4979dc1be3b6ab" FOREIGN KEY (direction_id) REFERENCES public.directions(id);
+
+
+--
+-- Name: botadmins FK_1d56639690f12e558b93ec8d953; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botadmins
+    ADD CONSTRAINT "FK_1d56639690f12e558b93ec8d953" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: schedules FK_20b5719dd9fcfa4df1707590cba; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "FK_20b5719dd9fcfa4df1707590cba" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: systemadmins_permissions_permissions FK_22c32952ea952af85bf073ae59e; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins_permissions_permissions
+    ADD CONSTRAINT "FK_22c32952ea952af85bf073ae59e" FOREIGN KEY ("permissionsId") REFERENCES public.permissions(id) ON DELETE SET NULL;
+
+
+--
+-- Name: schedules FK_2b9a68c93adbc74afa109bb2a73; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "FK_2b9a68c93adbc74afa109bb2a73" FOREIGN KEY (room_id) REFERENCES public.rooms(id);
+
+
+--
+-- Name: schedules FK_2c027020a88187efddd0dbb8421; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "FK_2c027020a88187efddd0dbb8421" FOREIGN KEY (teacher_id) REFERENCES public.teachers(id);
+
+
+--
+-- Name: systemadmins_permissions_permissions FK_2f6e6a843fd6755ca0de2009b15; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins_permissions_permissions
+    ADD CONSTRAINT "FK_2f6e6a843fd6755ca0de2009b15" FOREIGN KEY ("systemadminsId") REFERENCES public.systemadmins(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: schedules FK_330dc11fecc87ead6c8464d9552; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "FK_330dc11fecc87ead6c8464d9552" FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
+-- Name: times FK_36694795f1e8e3ad9025a316fa0; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.times
+    ADD CONSTRAINT "FK_36694795f1e8e3ad9025a316fa0" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: groups_times_times FK_39c76686d99a8229267be4f40b8; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups_times_times
+    ADD CONSTRAINT "FK_39c76686d99a8229267be4f40b8" FOREIGN KEY ("timesId") REFERENCES public.times(id) ON DELETE SET NULL;
+
+
+--
+-- Name: teachers_sciences_sciences FK_470ac240be5e58ccdddff6e1372; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.teachers_sciences_sciences
+    ADD CONSTRAINT "FK_470ac240be5e58ccdddff6e1372" FOREIGN KEY ("teachersId") REFERENCES public.teachers(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: groups FK_605decc6d0626239f9cf391fe2c; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT "FK_605decc6d0626239f9cf391fe2c" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: directions FK_60ff4194cbd89f24651756152e9; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.directions
+    ADD CONSTRAINT "FK_60ff4194cbd89f24651756152e9" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: groups FK_750d2414da6dfa70fa029c794fe; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT "FK_750d2414da6dfa70fa029c794fe" FOREIGN KEY (education_id) REFERENCES public.educations(id);
+
+
+--
+-- Name: botusers FK_88e0f93324a7a708458cd1c4e35; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botusers
+    ADD CONSTRAINT "FK_88e0f93324a7a708458cd1c4e35" FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
+-- Name: teachers FK_8dd88bcd30ebab66859c584ae35; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.teachers
+    ADD CONSTRAINT "FK_8dd88bcd30ebab66859c584ae35" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: systemadmins FK_9046e982aa383a38a86d2f2047a; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins
+    ADD CONSTRAINT "FK_9046e982aa383a38a86d2f2047a" FOREIGN KEY (university_id) REFERENCES public.universities(id);
+
+
+--
+-- Name: courses FK_97edc6c2889396d51502390070a; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.courses
+    ADD CONSTRAINT "FK_97edc6c2889396d51502390070a" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: botusers FK_9e46f2ba3807b082d6857ff571c; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.botusers
+    ADD CONSTRAINT "FK_9e46f2ba3807b082d6857ff571c" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: groups FK_b61a35e72ff621fcd717d74fce6; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups
+    ADD CONSTRAINT "FK_b61a35e72ff621fcd717d74fce6" FOREIGN KEY (course_id) REFERENCES public.courses(id);
+
+
+--
+-- Name: systemadmins FK_c0a43861a26ef1facc2c9723d82; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins
+    ADD CONSTRAINT "FK_c0a43861a26ef1facc2c9723d82" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: schedules FK_c10bb6f423264ea0e519ba57965; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "FK_c10bb6f423264ea0e519ba57965" FOREIGN KEY (time_id) REFERENCES public.times(id);
+
+
+--
+-- Name: systemadmins FK_c4b8ea430d3d39b9a5c323b70d7; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.systemadmins
+    ADD CONSTRAINT "FK_c4b8ea430d3d39b9a5c323b70d7" FOREIGN KEY (role_id) REFERENCES public.adminroles(id);
+
+
+--
+-- Name: schedules FK_c9dd5fab88901a89e9f014befff; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT "FK_c9dd5fab88901a89e9f014befff" FOREIGN KEY (science_id) REFERENCES public.sciences(id);
+
+
+--
+-- Name: groups_times_times FK_cc1da3682b0729dcd115e3e34fa; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.groups_times_times
+    ADD CONSTRAINT "FK_cc1da3682b0729dcd115e3e34fa" FOREIGN KEY ("groupsId") REFERENCES public.groups(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: teachers_sciences_sciences FK_d868c81f9198e5be5fee49d5cbf; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.teachers_sciences_sciences
+    ADD CONSTRAINT "FK_d868c81f9198e5be5fee49d5cbf" FOREIGN KEY ("sciencesId") REFERENCES public.sciences(id) ON DELETE SET NULL;
+
+
+--
+-- Name: teachers FK_d95e08718b761696a377d0fcabf; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.teachers
+    ADD CONSTRAINT "FK_d95e08718b761696a377d0fcabf" FOREIGN KEY (department_id) REFERENCES public.departments(id);
+
+
+--
+-- Name: departments FK_db9cbab5eb895126fc1689dc2ad; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.departments
+    ADD CONSTRAINT "FK_db9cbab5eb895126fc1689dc2ad" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: faculties FK_e7e42880536e292f61869f816cb; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.faculties
+    ADD CONSTRAINT "FK_e7e42880536e292f61869f816cb" FOREIGN KEY (university_id) REFERENCES public.universities(id);
+
+
+--
+-- Name: sciences FK_ea2077817229888570493801d3f; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.sciences
+    ADD CONSTRAINT "FK_ea2077817229888570493801d3f" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- Name: educations FK_f48275d3967d5683ed6bfe8aeae; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.educations
+    ADD CONSTRAINT "FK_f48275d3967d5683ed6bfe8aeae" FOREIGN KEY (faculty_id) REFERENCES public.faculties(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
