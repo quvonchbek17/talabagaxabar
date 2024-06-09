@@ -1,9 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
-import * as pdf from 'pdf-creator-node';
-import * as path from 'path';
-import { v4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Admin,
@@ -33,7 +30,7 @@ export class SchedulesService {
     @InjectRepository(Time)
     private readonly timeRepo: Repository<Time>,
     @InjectRepository(Room)
-    private readonly roomRepo: Repository<Room>
+    private readonly roomRepo: Repository<Room>,
   ) {}
 
   async createSchedulePdf(groupIds: string[], adminId: string) {
@@ -105,143 +102,15 @@ export class SchedulesService {
           }
           schedules[day] = arr;
         }
-
-        const filename = v4() + '_doc' + '.pdf';
-        let data = {
-          schedules,
-          groups: existingGroups,
+        return {
+          statusCode: HttpStatus.OK,
+          success: true,
+          message: 'success',
+          data: {
+            items: schedules,
+            groups: existingGroups,
+          },
         };
-        Object.keys(data.schedules).forEach((day) => {
-          data.schedules[day] = data.schedules[day].map((slot) => {
-            return slot.length ? slot : [''];
-          });
-        });
-
-        // Render the table
-        let htmlTop = `<!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <style>
-
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-
-            th,
-            td {
-              border: 1px solid black;
-              padding: 8px;
-              text-align: center;
-            }
-
-            th {
-              background-color: #f2f2f2;
-            }
-
-            .time-wrapper {
-              line-height: 1;
-              padding-top: 0.5rem;
-              position: relative;
-              transform: rotate(180deg);
-              white-space: nowrap;
-              writing-mode: vertical-rl;
-              left: 0;
-              width: 25px;
-              padding-bottom: 15px;
-              box-sizing: border-box;
-              text-align: left;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-
-            .group-name, .day-name {
-              color: red;
-              font-weight: bold;
-            }
-
-            p {
-              margin: 0;
-            }
-
-
-            </style>
-            <title>Jadval</title>
-          </head>
-          <body>`;
-
-        let htmlBottom = ` </body>
-          </html>`;
-        var html =
-          htmlTop +
-          `<table border="1" style="width: 100%;"><thead>
-        <tr>
-        <td class="day-name">Kun</td>
-        `;
-        data.groups.forEach((group) => {
-          html += `<td class="group-name">${group.name}</td>`;
-        });
-        html += `</tr>
-        </thead>
-        <tbody>`;
-
-        Object.keys(data.schedules).forEach((day, index) => {
-          let maxCount = Math.max(
-            ...data.schedules[day].map((el) => el.length),
-          );
-
-          for (let i = 0; i < maxCount; i++) {
-            if (i === 0) {
-              html += `<tr><td class="day-name" rowspan=${maxCount}>${day.substring(
-                0,
-                2,
-              )}</td>`;
-            }
-            data.schedules[day].forEach((el) => {
-              let sched = el[i];
-              if (sched) {
-                html += `
-                <td>
-                  ${sched.science?.name},
-                  ${sched.teacher?.name[0]}.${sched.teacher?.surname},
-                  ${sched.room?.name}
-                </td>`;
-              } else {
-                html += `<td></td>`;
-              }
-            });
-
-            html += '</tr>';
-          }
-        });
-
-        html += '</tbody></table>';
-        html += htmlBottom;
-
-        let filePath = path.join(
-          process.cwd(),
-          'src',
-          'common',
-          'docs',
-          filename,
-        );
-
-        const document = {
-          html: html,
-          data,
-          path: filePath,
-        };
-        let option = {
-          formate: 'A3',
-          orientation: 'portrait',
-          border: '2mm',
-        };
-        await pdf.create(document, option);
-
-        return filePath;
       }
     } catch (error) {
       throw new HttpException(
@@ -498,7 +367,6 @@ export class SchedulesService {
 
   async getPublic(group_id: string) {
     try {
-
       let schedules = await this.scheduleRepo
         .createQueryBuilder('sch')
         .leftJoinAndSelect('sch.room', 'r')
@@ -521,16 +389,16 @@ export class SchedulesService {
           'g.id',
           'g.name',
           's.id',
-          's.name'
+          's.name',
         ])
         .where('g.id = :groupId', { groupId: group_id })
-        .getMany()
+        .getMany();
 
       return {
         statusCode: HttpStatus.OK,
         success: true,
         message: 'success',
-        data: schedules
+        data: schedules,
       };
     } catch (error) {
       throw new HttpException(

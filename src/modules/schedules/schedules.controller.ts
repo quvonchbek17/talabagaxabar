@@ -20,7 +20,6 @@ import { SetRoles, rolesName } from '@common';
 import { JwtAuthGuard, HasRole } from '@guards';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto, FindAllQueryDto, ScheduleParamsIdDto, UpdateScheduleDto, CreateSchedulePdfDto, SchedulePublicParamDto } from './dto';
-import * as fs from 'fs';
 
 
 @Controller('schedules')
@@ -40,19 +39,7 @@ export class SchedulesController {
   @Post('pdf')
   async downloadSchedulePdf(@Req() req: Request, @Res() res: Response, @Body() body: CreateSchedulePdfDto ) {
     try {
-      let filePath = await this.schedulesService.createSchedulePdf(body?.groups, req.user?.id);
-      res.download(filePath, "Jadval.pdf", (err) => {
-        if (err) {
-          res.status(500).send({
-            statusCode: 500,
-            success: false,
-            message: 'PDF yaratishda xatolik yuz berdi',
-          });
-        }
-        // Faylni o'chirish
-        fs.unlinkSync(filePath);
-      });
-
+      return await this.schedulesService.createSchedulePdf(body?.groups, req.user?.id);
     } catch (error) {
       res.status(403).send({
         statusCode: error.status || HttpStatus.BAD_REQUEST,
