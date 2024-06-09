@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Admin, Room, Schedule } from '@entities';
 import { rolesName } from '@common';
-import { Cache } from 'cache-manager';
 
 @Injectable()
 export class RoomsService {
@@ -14,9 +13,7 @@ export class RoomsService {
     @InjectRepository(Schedule)
     private readonly scheduleRepo: Repository<Schedule>,
     @InjectRepository(Admin)
-    private readonly adminRepo: Repository<Admin>,
-    @Inject('CACHE_MANAGER')
-    private cacheManager: Cache,
+    private readonly adminRepo: Repository<Admin>
   ) {}
 
   async create(body: CreateRoomDto, adminId: string) {
@@ -89,46 +86,6 @@ export class RoomsService {
         where: { id: adminId },
         relations: { faculty: true, role: true },
       });
-
-      //////////////// CACHE ///////////////////
-      // let allCachedRooms: any[] = await this.cacheManager.get("allRooms");
-
-      // const filterRooms = (rooms) => {
-      //   return rooms.filter(room => {
-      //     let isMatch = true;
-      //     if (search && !room.name.includes(search)) isMatch = false;
-      //     if (capacityTo && room.capacity > capacityTo) isMatch = false;
-      //     if (capacityFrom && room.capacity < capacityFrom) isMatch = false;
-      //     if (floor && room.floor !== floor) isMatch = false;
-      //     if (faculty_id && room.faculty?.id !== faculty_id) isMatch = false;
-      //     if ((admin.role.name === rolesName.faculty_admin || admin.role.name === rolesName.faculty_lead_admin) && room.faculty.id !== admin.faculty.id) isMatch = false;
-      //     return isMatch;
-      //   });
-      // };
-
-      // if (allCachedRooms) {
-      //   const filteredRooms = filterRooms(allCachedRooms);
-      //   const totalCount = filteredRooms.length;
-      //   const paginatedRooms = filteredRooms.slice((page - 1) * limit, page * limit);
-
-      //   return {
-      //     statusCode: HttpStatus.OK,
-      //     success: true,
-      //     cached: true,
-      //     message: 'success',
-      //     data: {
-      //       currentPage: page,
-      //       currentCount: limit,
-      //       totalCount: totalCount,
-      //       totalPages: Math.ceil(totalCount / limit),
-      //       items: paginatedRooms,
-      //     },
-      //   };
-      // }
-
-      // let allRooms = await qb.select(['r.id', 'r.name', 'r.capacity', 'r.floor', 'f.id', 'f.name']).getMany()
-      // this.cacheManager.set("allRooms", allRooms)
-      ///////////////////// CACHE END ////////////////////////////////////
 
       let qb = this.roomRepo.createQueryBuilder('r');
 

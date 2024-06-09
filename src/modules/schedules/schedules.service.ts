@@ -16,7 +16,6 @@ import {
 } from '@entities';
 import { In, Not, Repository } from 'typeorm';
 import { rolesName } from '@common';
-import { Cache } from 'cache-manager';
 
 @Injectable()
 export class SchedulesService {
@@ -34,9 +33,7 @@ export class SchedulesService {
     @InjectRepository(Time)
     private readonly timeRepo: Repository<Time>,
     @InjectRepository(Room)
-    private readonly roomRepo: Repository<Room>,
-    @Inject('CACHE_MANAGER')
-    private cacheManager: Cache,
+    private readonly roomRepo: Repository<Room>
   ) {}
 
   async createSchedulePdf(groupIds: string[], adminId: string) {
