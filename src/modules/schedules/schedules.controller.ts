@@ -37,15 +37,8 @@ export class SchedulesController {
   @SetRoles(rolesName.faculty_lead_admin, rolesName.faculty_admin)
   @UseGuards(JwtAuthGuard, HasRole)
   @Post('pdf')
-  async downloadSchedulePdf(@Req() req: Request, @Res() res: Response, @Body() body: CreateSchedulePdfDto ) {
-    try {
+  async downloadSchedulePdf(@Req() req: Request, @Body() body: CreateSchedulePdfDto ) {
       return await this.schedulesService.createSchedulePdf(body?.groups, req.user?.id);
-    } catch (error) {
-      res.status(403).send({
-        statusCode: error.status || HttpStatus.BAD_REQUEST,
-        message: error.message,
-      });
-    }
   }
 
   @SetRoles(
